@@ -1,0 +1,15 @@
+{
+  "input-data": {
+    "hamiltonian-adiabatic": "pot-pspot.dsv",
+    "coupling_∂_∂R_adiabatic": "ddr-pspot.dsv",
+    "coupling_∂_∂R_adiabatic_model": "ddr-pspot.dsv"
+  },
+  "output-data": {
+    "hamiltonian-diabatic": "potentials-diabatic.dsv",
+    "coupling-∂_∂R-diabatic": "ddr-diabatic.dsv",
+    "transformation-matrix": "transformation-matrix.dsv"
+  },
+  "settings": {
+    "strategy": "Landau-Zener-with-external-model-data"
+  }
+}
