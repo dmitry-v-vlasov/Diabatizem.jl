@@ -23,6 +23,18 @@ type OutputPaths
 end
 
 @enum CalculationStrategy LANDAU_ZENER LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA EXTERNAL_MODEL_DATA JUST_MAKE_THEM_ZEROS UNKNOWN
+const MAPPING_CalculationStrategy = Dict(
+  "Landau-Zener" => LANDAU_ZENER::CalculationStrategy,
+  "Landau-Zener-with-external-model-data" => LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy,
+  "external-model-data" => EXTERNAL_MODEL_DATA::CalculationStrategy,
+  "just-make-them-zeros" => JUST_MAKE_THEM_ZEROS::CalculationStrategy
+)
+
+@enum NonadiabaticAreaTypes SINGLE_PEAK DOUBLE_PEAK UNSUPPORTED
+const MAPPING_NonadiabaticAreaTypes = Dict(
+  "single-peak" => SINGLE_PEAK::NonadiabaticAreaTypes
+  #"double-peak" => DOUBLE_PEAK
+)
 
 type UtilitySettings
   channel_ionic_number::Int
@@ -31,6 +43,7 @@ end
 
 type AsymptoticSettings
   coordinate_start::Float64
+  coordinate_step::Float64
   coordinate_safety_step::Float64
   potential_asymptotic_value_error::Float64
   ∂_∂R_asymptotic_value_error::Float64
@@ -49,7 +62,7 @@ end
 type CalculationSettings
   strategy::CalculationStrategy
   asymptotics::AsymptoticSettings
-  nonadiabatic_areas::NonadiabaticAreaSettings
+  nonadiabatic_areas::Array{NonadiabaticAreaSettings}
   utility::UtilitySettings
 end
 
@@ -64,43 +77,116 @@ function loadConfiguration(filePath::AbstractString)
   js = JSON.parsefile(filePath; dicttype=DataStructures.OrderedDict)
 
   input_paths = InputPaths(js["input-data"]["hamiltonian-adiabatic"], js["input-data"]["coupling_∂_∂R_adiabatic"], Nullable{AbstractString}())
-  input_data = InputData(loadRawData(input_paths.file_hamiltonian_adiabatic), loadRawData(input_paths.file_coupling_∂_∂R_adiabatic), Nullable{DataFrame}())
+
+  Hₐ_data = loadRawData(input_paths.file_hamiltonian_adiabatic)
+  fixPotentialAsymptotics!(Hₐ_data, loadUtilitySettings(js["settings"]["utility"]))
+  input_data = InputData(Hₐ_data, loadRawData(input_paths.file_coupling_∂_∂R_adiabatic), Nullable{DataFrame}())
 
   output_paths = OutputPaths(js["output-data"]["hamiltonian-diabatic"], js["output-data"]["coupling-∂_∂R-diabatic"], js["output-data"]["transformation-matrix"])
 
+  settings = loadCalculationSettings(js, input_paths, input_data)
+
+  return Configuration(input_paths, input_data, output_paths, settings)
+end
+
+function fixPotentialAsymptotics!(Hₐ_data::DataFrame, utilitySettings)
+  Nₚ = size(Hₐ_data, 1)
+  Nᵩ = size(Hₐ_data, 2) - 1
+  lowest_channel = utilitySettings.channel_lowest_number > 0 ? utilitySettings.channel_lowest_number : 1
+  Uₗ_∞ = Hₐ_data[Nₚ, lowest_channel + 1]
+  for line = 1:Nₚ, channel = 1:Nᵩ
+    Hₐ_data[line, channel + 1] = Hₐ_data[line, channel + 1] - Uₗ_∞
+  end
+end
+
+function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputData)
   strategy_name = CalculationStrategy(deriveStrategy(js["settings"]["strategy"]))
-  if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA == strategy_name || EXTERNAL_MODEL_DATA == strategy_name
+  if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name
     if haskey(js["input-data"], "coupling_∂_∂R_adiabatic_model")
       input_paths.file_coupling_∂_∂R_adiabatic_model = js["input-data"]["coupling_∂_∂R_adiabatic_model"]
     else
       throw(DomainError("The configuration setting 'coupling_∂_∂R_adiabatic_model' is obligatory for the strategy $strategy_name"))
     end
   end
-  if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA == strategy_name || EXTERNAL_MODEL_DATA == strategy_names
+  if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_names
     input_data.coupling_∂_∂R_adiabatic_model = loadRawData(get(input_paths.file_coupling_∂_∂R_adiabatic_model))
   end
 
-  settings = CalculationSettings(strategy_name)
+  jss = js["settings"]
+  asymptoticSettings = loadAsymptotics(jss["asymptotics"])
+  nonadiabaticAreas = loadNonadiabaticAreas(jss["nonadiabatic-areas"])
+  utilitySettings = loadUtilitySettings(jss["utility"])
 
-  return Configuration(input_paths, input_data, output_paths, settings)
+  settings = CalculationSettings(strategy_name, asymptoticSettings, nonadiabaticAreas, utilitySettings)
+  return settings
+end
+
+function loadUtilitySettings(js)
+  channel_ionic_number = js["channel-ionic-number"]
+  channel_lowest_number = js["channel-lowest-number"]
+  return UtilitySettings(channel_ionic_number, channel_lowest_number)
+end
+
+function loadNonadiabaticAreas(js_areas)
+  areas = Array{NonadiabaticAreaSettings}(0)
+  for area in js_areas
+    areaType = get(MAPPING_NonadiabaticAreaTypes, area.first, UNSUPPORTED::NonadiabaticAreaTypes)
+    if areaType == UNSUPPORTED::NonadiabaticAreaTypes
+      throw(DomainError("Unsupported non-adiabatic area type '$(area.first)'"))
+    end
+    if areaType == SINGLE_PEAK::NonadiabaticAreaTypes
+      areaSettings = buildSinglePeakNonadiabaticArea(area.second)
+      append!(areas, [areaSettings])
+    end
+  end
+  return areas
+end
+
+function buildSinglePeakNonadiabaticArea(area)
+  error_∂_∂R_peak = area["error-∂_∂R-peak"]
+  vanishing_∂_∂R_value = area["vanishing-∂_∂R-value"]
+  error_potential_distance_minimal = area["error-potential-distance-minimal"]
+  error_potential_distance_coordinate = area["error-potential-distance-coordinate"]
+  error_potential_∂_∂R_coordinate = area["error-potential-∂_∂R-coordinate"]
+  return SinglePeakNonadiabaticAreaSettings(
+    error_∂_∂R_peak,
+    vanishing_∂_∂R_value,
+    error_potential_distance_minimal,
+    error_potential_distance_coordinate,
+    error_potential_∂_∂R_coordinate
+  )
+end
+
+function loadAsymptotics(js)
+  coordinate_start = js["coordinate-start"]
+  coordinate_step = js["coordinate-step"]
+  coordinate_safety_step = js["coordinate-safety-step"]
+  potential_asymptotic_value_error = js["potential-asymptotic-value-error"]
+  ∂_∂R_asymptotic_value_error = js["∂_∂R-asymptotic-value-error"]
+  ∂_∂R_zero_value_error = js["∂_∂R-zero-value-error"]
+  return AsymptoticSettings(
+    coordinate_start,
+    coordinate_step,
+    coordinate_safety_step,
+    potential_asymptotic_value_error,
+    ∂_∂R_asymptotic_value_error,
+    ∂_∂R_zero_value_error
+  )
 end
 
 function deriveStrategy(strategyName::AbstractString)
-  strategy = begin
-    if "Landau-Zener" == strategyName
-      return LANDAU_ZENER
-    elseif "Landau-Zener-with-external-model-data" == strategyName
-      return LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA
-    elseif "external-model-data" == strategyName
-      return EXTERNAL_MODEL_DATA
-    elseif "just-make-them-zeros" == strategyName
-      return JUST_MAKE_THEM_ZEROS
-    else
-      throw(DomainError("Illegal strategy name '$strategyName'."))
-    end
+  strategy = get(MAPPING_CalculationStrategy, strategyName, UNKNOWN::CalculationStrategy)
+  if strategy == UNKNOWN::CalculationStrategy
+    throw(DomainError("Illegal strategy name '$strategyName'."))
   end
+  return strategy
 end
 
 function loadRawData(filePath::AbstractString)
-  return DataFrames.readtable(filePath, header = true, separator = ' ', allowcomments = true, commentmark = '#', skipblanks = true, encoding = :utf8, normalizenames = true)
+  return DataFrames.readtable(
+    filePath,
+    header = true, separator = ' ',
+    allowcomments = true, commentmark = '#',
+    skipblanks = true, encoding = :utf8, normalizenames = true
+  )
 end

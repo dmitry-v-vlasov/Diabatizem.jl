@@ -15,10 +15,10 @@
     * DomainError in case i is equal to j
 """
 function dataColumnOfSymetricMatrix(i::Int, j::Int, N::Int)
-  if i > j
-    return (2(N - 1) - i) * (i - 1) + (j - 1)
-  elseif i < j
-    return (2(N - 1) - j) * (j - 1) + (i - 1)
+  if i < j
+    return (2*(N - 1) - i) * (i - 1) / 2 + (j - 1)
+  elseif i > j
+    return (2*(N - 1) - j) * (j - 1) / 2 + (i - 1)
   else
     throw(DomainError("The equal line and column value '$i' is undefined for the (anti)symmetric matrix with zero main diagonal."))
   end
