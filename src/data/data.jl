@@ -4,7 +4,7 @@ using Interpolations
 include("../util/util.jl")
 
 type Data
-  hamiltonian::Array{Function, 2}
+  Hₐ::Array{Function, 2}
   ∂_∂R::Array{Function, 2}
   function Data() new() end
 end
@@ -20,14 +20,14 @@ function buildHₐ!(table_Hₐ::DataFrame, data::Data)
   X = convert(Array{Float64}, table_Hₐ[1])
   ΔR = X[2] - X[1]
   N = numberOfChannels(table_Hₐ)
-  data.hamiltonian = Array{Function, 2}(N, N)
+  data.Hₐ = Array{Function, 2}(N, N)
   for i = 1:N, j = 1:N
     if i == j
       Y = convert(Array{Float64}, table_Hₐ[i + 1])
       itp = interpolate(Y, BSpline(Quadratic(Flat())), OnGrid())
-      setindex!(data.hamiltonian, R -> itp[R/ΔR + 1], i, j)
+      setindex!(data.Hₐ, R -> itp[R/ΔR + 1], i, j)
     else
-      setindex!(data.hamiltonian, R -> 0, i, j)
+      setindex!(data.Hₐ, R -> 0, i, j)
     end
   end
 end
