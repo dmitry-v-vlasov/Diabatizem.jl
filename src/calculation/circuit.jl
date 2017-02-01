@@ -5,9 +5,6 @@
 using Calculus
 using Formatting
 
-include("../constants/constants.jl")
-include("types.jl")
-
 function potentialAsymptoticValues(potentials::Array{Function, 2},
                                     coordinate_start::Float64,
                                     coordinate_step::Float64,

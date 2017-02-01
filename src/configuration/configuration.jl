@@ -141,7 +141,7 @@ function loadInterpolationSettings(js)
     throw(DomainError("Unsupported hamiltonian interpolation sort: $(js["hamiltonian"])"))
   end
   if UNSUPPORTED_INTERP::InterpolationType == interpolation_∂_∂R
-    throw(DomainError("Unsupported hamiltonian interpolation sort: $(js["coupling-∂_∂R"])"))
+    throw(DomainError("Unsupported ∂_∂R-coupling interpolation sort: $(js["coupling-∂_∂R"])"))
   end
   return InterpolationSettings(interpolation_H, interpolation_∂_∂R)
 end

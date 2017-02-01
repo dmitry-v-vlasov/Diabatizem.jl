@@ -1,9 +1,6 @@
 using DataFrames
 using Interpolations
 
-include("../util/util.jl")
-#include("../configuration/configuration.jl")
-
 type Data
   Hₐ::Array{Function, 2}
   ∂_∂R::Array{Function, 2}
