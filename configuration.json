@@ -31,6 +31,10 @@
     "utility": {
       "channel-ionic-number": -1,
       "channel-lowest-number": 1
+    },
+    "interpolation": {
+      "hamiltonian": "spline-cubic",
+      "coupling-∂_∂R": "spline-linear"
     }
   }
 }

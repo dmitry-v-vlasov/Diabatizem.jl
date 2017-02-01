@@ -41,6 +41,17 @@ type UtilitySettings
   channel_lowest_number::Int
 end
 
+@enum InterpolationType SPLINE_LINEAR SPLINE_QUADRATIC SPLINE_CUBIC UNSUPPORTED_INTERP
+const MAPPING_InterpolationType = Dict(
+  "spline-linear" => SPLINE_LINEAR::InterpolationType,
+  "spline-quadratic" => SPLINE_QUADRATIC::InterpolationType,
+  "spline-cubic" => SPLINE_CUBIC::InterpolationType
+)
+type InterpolationSettings
+  hamiltonian::InterpolationType
+  coupling_∂_∂R::InterpolationType
+end
+
 type AsymptoticSettings
   coordinate_start::Float64
   coordinate_step::Float64
@@ -64,6 +75,7 @@ type CalculationSettings
   asymptotics::AsymptoticSettings
   nonadiabatic_areas::Array{NonadiabaticAreaSettings}
   utility::UtilitySettings
+  interpolation::InterpolationSettings
 end
 
 type Configuration
@@ -116,9 +128,22 @@ function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputD
   asymptoticSettings = loadAsymptotics(jss["asymptotics"])
   nonadiabaticAreas = loadNonadiabaticAreas(jss["nonadiabatic-areas"])
   utilitySettings = loadUtilitySettings(jss["utility"])
+  interpolationSettings = loadInterpolationSettings(jss["interpolation"])
 
-  settings = CalculationSettings(strategy_name, asymptoticSettings, nonadiabaticAreas, utilitySettings)
+  settings = CalculationSettings(strategy_name, asymptoticSettings, nonadiabaticAreas, utilitySettings, interpolationSettings)
   return settings
+end
+
+function loadInterpolationSettings(js)
+  interpolation_H = get(MAPPING_InterpolationType, js["hamiltonian"], UNSUPPORTED_INTERP::InterpolationType)
+  interpolation_∂_∂R = get(MAPPING_InterpolationType, js["coupling-∂_∂R"], UNSUPPORTED_INTERP::InterpolationType)
+  if UNSUPPORTED_INTERP::InterpolationType == interpolation_H
+    throw(DomainError("Unsupported hamiltonian interpolation sort: $(js["hamiltonian"])"))
+  end
+  if UNSUPPORTED_INTERP::InterpolationType == interpolation_∂_∂R
+    throw(DomainError("Unsupported hamiltonian interpolation sort: $(js["coupling-∂_∂R"])"))
+  end
+  return InterpolationSettings(interpolation_H, interpolation_∂_∂R)
 end
 
 function loadUtilitySettings(js)
