@@ -8,7 +8,7 @@ using DataFrames
 type ParameterMatrix
   distance::Float64
   data::Array{Float64, Float64}
-  function ParameterMatrix() end
+  function ParameterMatrix() new() end
 end
 # ------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ type SinglePeakNonadiabaticArea <: NonadiabaticArea
   coordinate_potentials::Float64
   coordinate_from::Float64
   coordinate_to::Float64
-  function SinglePeakNonadiabaticArea() end
+  function SinglePeakNonadiabaticArea() new() end
 end
 # ----------- non-adiabatic areas -----------
 
@@ -50,13 +50,13 @@ end
 type DiabaticData
   hamiltonian::Dict{Float64, ParameterMatrix}
   ∂_∂R::Dict{Float64, ParameterMatrix}
-  function DiabaticData() end
+  function DiabaticData() new() end
 end
 
 type DiabaticDataOutput
   hamiltonian::DataFrame
   ∂_∂R::DataFrame
-  function DiabaticDataOutput() end
+  function DiabaticDataOutput() new() end
 end
 # ----------- diabatic data -----------
 
@@ -64,7 +64,7 @@ end
 type GeneralCalculation <: Calculation
   asymptotics::AsymptoticCalculation
   nonadiabatic_areas::Array{NonadiabaticArea}
-  function GeneralCalculation() end
+  function GeneralCalculation() new() end
 end
 # ----------- all calculation results -----------
 

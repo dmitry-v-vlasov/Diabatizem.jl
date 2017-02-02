@@ -65,15 +65,23 @@ abstract NonadiabaticAreaSettings
 type SinglePeakNonadiabaticAreaSettings <: NonadiabaticAreaSettings
   error_∂_∂R_peak::Float64
   vanishing_∂_∂R_value::Float64
+  error_vanishing_∂_∂R_value::Float64
   error_potential_distance_minimal::Float64
   error_potential_distance_coordinate::Float64
   error_potential__∂_∂R_coordinate::Float64
 end
+type NonadiabaticAreasConfiguration
+  coordinate_start::Float64
+  coordinate_step::Float64
+  nonadiabatic_areas::Dict{NonadiabaticAreaTypes, NonadiabaticAreaSettings}
+end
 
 type CalculationSettings
   strategy::CalculationStrategy
+  coordinate_start::Float64
+  coordinate_step::Float64
   asymptotics::AsymptoticSettings
-  nonadiabatic_areas::Array{NonadiabaticAreaSettings}
+  nonadiabatic_areas::NonadiabaticAreasConfiguration
   utility::UtilitySettings
   interpolation::InterpolationSettings
 end
@@ -112,7 +120,8 @@ function fixPotentialAsymptotics!(Hₐ_data::DataFrame, utilitySettings)
 end
 
 function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputData)
-  strategy_name = CalculationStrategy(deriveStrategy(js["settings"]["strategy"]))
+  jss = js["settings"]
+  strategy_name = CalculationStrategy(deriveStrategy(jss["strategy"]))
   if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name
     if haskey(js["input-data"], "coupling_∂_∂R_adiabatic_model")
       input_paths.file_coupling_∂_∂R_adiabatic_model = js["input-data"]["coupling_∂_∂R_adiabatic_model"]
@@ -124,13 +133,15 @@ function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputD
     input_data.coupling_∂_∂R_adiabatic_model = loadRawData(get(input_paths.file_coupling_∂_∂R_adiabatic_model))
   end
 
-  jss = js["settings"]
-  asymptoticSettings = loadAsymptotics(jss["asymptotics"])
-  nonadiabaticAreas = loadNonadiabaticAreas(jss["nonadiabatic-areas"])
+  coordinate_start = haskey(jss, "coordinate-start") ? (jss["coordinate-start"] < 0 ? -1 : jss["coordinate-start"]) : -1
+  coordinate_step = haskey(jss, "coordinate-step") ? (jss["coordinate-step"] < 0 ? -1 : jss["coordinate-step"]) : -1
+
+  asymptoticSettings = loadAsymptotics(jss["asymptotics"], coordinate_start, coordinate_step)
+  nonadiabaticAreas = loadNonadiabaticAreas(jss["nonadiabatic-areas"], coordinate_start, coordinate_step)
   utilitySettings = loadUtilitySettings(jss["utility"])
   interpolationSettings = loadInterpolationSettings(jss["interpolation"])
 
-  settings = CalculationSettings(strategy_name, asymptoticSettings, nonadiabaticAreas, utilitySettings, interpolationSettings)
+  settings = CalculationSettings(strategy_name, coordinate_start, coordinate_step, asymptoticSettings, nonadiabaticAreas, utilitySettings, interpolationSettings)
   return settings
 end
 
@@ -152,8 +163,22 @@ function loadUtilitySettings(js)
   return UtilitySettings(channel_ionic_number, channel_lowest_number)
 end
 
-function loadNonadiabaticAreas(js_areas)
-  areas = Array{NonadiabaticAreaSettings}(0)
+function loadNonadiabaticAreas(js, p_coordinate_start, p_coordinate_step)
+  if (!haskey(js, "coordinate-start") && p_coordinate_start == -1) || (js["coordinate-start"] < 0 && p_coordinate_start == -1)
+    throw(DomainError("Please define the setting 'coordinate-start' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
+  end
+  if (!haskey(js, "coordinate-step") && p_coordinate_step == -1)  || (js["coordinate-step"] < 0 && p_coordinate_start == -1)
+    throw(DomainError("Please define the setting 'coordinate-step' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
+  end
+
+  coordinate_start = deriveCoordinateParameter(js, "coordinate-start", p_coordinate_start)
+  coordinate_step = deriveCoordinateParameter(js, "coordinate-step", p_coordinate_step)
+  if coordinate_step < 1e-8
+    throw(DomainError("The configured step by coordinate ΔR=$coordinate_step is too small or negative."))
+  end
+
+  js_areas = js["areas"]
+  areas = Dict{NonadiabaticAreaTypes, NonadiabaticAreaSettings}()
   for area in js_areas
     areaType = get(MAPPING_NonadiabaticAreaTypes, area.first, UNSUPPORTED::NonadiabaticAreaTypes)
     if areaType == UNSUPPORTED::NonadiabaticAreaTypes
@@ -161,30 +186,45 @@ function loadNonadiabaticAreas(js_areas)
     end
     if areaType == SINGLE_PEAK::NonadiabaticAreaTypes
       areaSettings = buildSinglePeakNonadiabaticArea(area.second)
-      append!(areas, [areaSettings])
+      areas[areaType] = areaSettings
     end
   end
-  return areas
+
+  areasConfig = NonadiabaticAreasConfiguration(coordinate_start, coordinate_step, areas)
+  return areasConfig
 end
 
 function buildSinglePeakNonadiabaticArea(area)
   error_∂_∂R_peak = area["error-∂_∂R-peak"]
   vanishing_∂_∂R_value = area["vanishing-∂_∂R-value"]
+  error_vanishing_∂_∂R_value = area["error-vanishing-∂_∂R-value"]
   error_potential_distance_minimal = area["error-potential-distance-minimal"]
   error_potential_distance_coordinate = area["error-potential-distance-coordinate"]
   error_potential_∂_∂R_coordinate = area["error-potential-∂_∂R-coordinate"]
   return SinglePeakNonadiabaticAreaSettings(
     error_∂_∂R_peak,
     vanishing_∂_∂R_value,
+    error_vanishing_∂_∂R_value,
     error_potential_distance_minimal,
     error_potential_distance_coordinate,
     error_potential_∂_∂R_coordinate
   )
 end
 
-function loadAsymptotics(js)
-  coordinate_start = js["coordinate-start"]
-  coordinate_step = js["coordinate-step"]
+function loadAsymptotics(js, p_coordinate_start, p_coordinate_step)
+  if (!haskey(js, "coordinate-start") && p_coordinate_start == -1) || (js["coordinate-start"] < 0 && p_coordinate_start == -1)
+    throw(DomainError("Please define the setting 'coordinate-start' in the global 'settings' section or in the 'asymptotics' child configuration element using a small positive number."))
+  end
+  if (!haskey(js, "coordinate-step") && p_coordinate_step == -1)  || (js["coordinate-step"] < 0 && p_coordinate_start == -1)
+    throw(DomainError("Please define the setting 'coordinate-step' in the global 'settings' section or in the 'asymptotics' child configuration element using a small positive number."))
+  end
+
+  coordinate_start = deriveCoordinateParameter(js, "coordinate-start", p_coordinate_start)
+  coordinate_step = deriveCoordinateParameter(js, "coordinate-step", p_coordinate_step)
+  if coordinate_step < 1e-8
+    throw(DomainError("The configured step by coordinate ΔR=$coordinate_step is too small or negative."))
+  end
+
   coordinate_safety_step = js["coordinate-safety-step"]
   potential_asymptotic_value_error = js["potential-asymptotic-value-error"]
   ∂_∂R_asymptotic_value_error = js["∂_∂R-asymptotic-value-error"]
@@ -197,6 +237,23 @@ function loadAsymptotics(js)
     ∂_∂R_asymptotic_value_error,
     ∂_∂R_zero_value_error
   )
+end
+
+function deriveCoordinateParameter(js, name::AbstractString, parent_value)
+  if haskey(js, name)
+    value = js[name]
+    if value > 0 && parent_value < 0
+      return value
+    elseif value < 0 && parent_value > 0
+      return parent_value
+    else
+      throw(ErrorException("Unexpected behaviour."))
+    end
+  elseif !haskey(js, name) && parent_value > 0
+    return parent_value
+  else
+    throw(ErrorException("Unexpected behaviour."))
+  end
 end
 
 function deriveStrategy(strategyName::AbstractString)

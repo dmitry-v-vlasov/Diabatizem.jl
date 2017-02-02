@@ -11,6 +11,8 @@
   },
   "settings": {
     "strategy": "Landau-Zener-with-external-model-data",
+    "coordinate-start": 0.1,
+    "coordinate-step": 0.001,
     "asymptotics": {
       "coordinate-start": 0.1,
       "coordinate-step": 0.01,
@@ -20,12 +22,17 @@
       "∂_∂R-zero-value-error": 0.0005
     },
     "nonadiabatic-areas": {
-      "single-peak": {
-        "error-∂_∂R-peak": 0.005,
-        "vanishing-∂_∂R-value": 0.005,
-        "error-potential-distance-minimal": 0.005,
-        "error-potential-distance-coordinate": 0.0005,
-        "error-potential-∂_∂R-coordinate": 0.0005
+      "coordinate-start": 0.1,
+      "coordinate-step": 0.001,
+      "areas": {
+        "single-peak": {
+          "error-∂_∂R-peak": 0.0001,
+          "vanishing-∂_∂R-value": 0.005,
+          "error-vanishing-∂_∂R-value": 0.0005,
+          "error-potential-distance-minimal": 0.0005,
+          "error-potential-distance-coordinate": 0.0001,
+          "error-potential-∂_∂R-coordinate": 0.0005
+        }
       }
     },
     "utility": {
