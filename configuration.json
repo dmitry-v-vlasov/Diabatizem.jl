@@ -13,9 +13,11 @@
     "strategy": "Landau-Zener-with-external-model-data",
     "coordinate-start": 0.1,
     "coordinate-step": 0.001,
+    "coordinate-step-error": 1e-8,
     "asymptotics": {
       "coordinate-start": 0.1,
       "coordinate-step": 0.01,
+      "coordinate-step-error": 1e-8,
       "coordinate-safety-step": 1.0,
       "potential-asymptotic-value-error": 0.0005,
       "∂_∂R-asymptotic-value-error": 0.0005,
@@ -24,6 +26,7 @@
     "nonadiabatic-areas": {
       "coordinate-start": 0.1,
       "coordinate-step": 0.001,
+      "coordinate-step-error": 1e-8,
       "areas": {
         "single-peak": {
           "error-∂_∂R-peak": 0.0001,
