@@ -267,13 +267,15 @@ function deriveCoordinateParameter(js, name::AbstractString, parent_value)
       return value
     elseif value < 0 && parent_value > 0
       return parent_value
+    elseif value > 0 && parent_value > 0
+      return value
     else
-      throw(ErrorException("Unexpected behaviour."))
+      throw(ErrorException("Unexpected behaviour; name=$name, parent_value=$parent_value."))
     end
   elseif !haskey(js, name) && parent_value > 0
     return parent_value
   else
-    throw(ErrorException("Unexpected behaviour."))
+    throw(ErrorException("Unexpected behaviour; name=$name, parent_value=$parent_value."))
   end
 end
 

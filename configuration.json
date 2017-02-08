@@ -15,7 +15,7 @@
     "coordinate-step": 0.001,
     "coordinate-step-error": 1e-8,
     "asymptotics": {
-      "coordinate-start": 0.1,
+      "coordinate-start": 0.2,
       "coordinate-step": 0.01,
       "coordinate-step-error": 1e-8,
       "coordinate-safety-step": 1.0,
@@ -24,7 +24,7 @@
       "∂_∂R-zero-value-error": 0.0005
     },
     "nonadiabatic-areas": {
-      "coordinate-start": 0.1,
+      "coordinate-start": 0.11,
       "coordinate-step": 0.001,
       "coordinate-step-error": 1e-8,
       "areas": {
