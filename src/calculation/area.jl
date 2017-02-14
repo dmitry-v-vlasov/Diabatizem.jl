@@ -35,8 +35,8 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
   area_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
 
   N = size(M_∂_∂R, 1)
-  areas = Array{Array{SinglePeakNonadiabaticArea, 1}, 2}(N, N)
-  fill!(areas, Array{SinglePeakNonadiabaticArea, 1}())
+  areas = Array{Array{NonadiabaticArea, 1}, 2}(N, N)
+  fill!(areas, Array{NonadiabaticArea, 1}())
 
   Rₛₜₐᵣₜ = nonadiabatic_config.coordinate_start; ΔRₘₐₓ = nonadiabatic_config.coordinate_step; Rₛₜₒₚ = Rstop
   ϵₐ_τ = abs(nonadiabatic_config.coordinate_step_error)
@@ -200,4 +200,45 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
   end
 
   return areas
+end
+
+function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Array{NonadiabaticArea, 1}, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
+  N = size(M_Hₐ, 1)
+  areas_lz = Array{Array{SinglePeakNonadiabaticArea, 1}, 2}(N, N)
+
+  area_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
+  ϵ_lz = abs(area_config.error_potential_∂_∂R_coordinate)
+  ϵₘᵢₙᵢₘᵤₘ = abs(area_config.error_potential_distance_coordinate)
+
+  for i = 1:N, j = 1:N
+    if i >= j && abs(i - j) ≠ 1
+      continue
+    end
+
+    candidate = areas[i, j]
+    Rₐ = candidate.coordinate_from; Rᵦ = candidate.coordinate_to
+    R₀ = candidate.coordinate_∂_∂R
+
+    U₁(R) = M_Hₐ[i, i](R); U₂(R) = M_Hₐ[j, j](R);
+    ΔU(R) = abs(U₂(R) - U₁(R))
+
+    result = Optim.optimize(ΔU, Rₐ, Rᵦ, Optim.Brent())
+    Rₘᵢₙᵢₘᵤₘ = Optim.minimum(result)
+
+    if abs(Rₘᵢₙᵢₘᵤₘ - R₀) <= ϵ_lz
+      area_lz = SinglePeakNonadiabaticArea()
+      area_lz.states = (i, j)
+      area_lz.coordinate_∂_∂R = R₀; area_lz.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
+      area_lz.coordinate_from = Rₐ; area_lz.coordinate_to = Rᵦ
+      areas_lz[i, j] = area_lz
+
+      area_lz_inv = SinglePeakNonadiabaticArea()
+      area_lz_inv.states = (j, i)
+      area_lz_inv.coordinate_∂_∂R = R₀; area_lz_inv.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
+      area_lz_inv.coordinate_from = Rₐ; area_lz_inv.coordinate_to = Rᵦ
+      areas_lz[j, i] = area_lz_inv
+    end
+
+    return areas_lz
+  end
 end

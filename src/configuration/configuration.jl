@@ -69,7 +69,7 @@ type SinglePeakNonadiabaticAreaSettings <: NonadiabaticAreaSettings
   error_vanishing_∂_∂R_value::Float64
   error_potential_distance_minimal::Float64
   error_potential_distance_coordinate::Float64
-  error_potential__∂_∂R_coordinate::Float64
+  error_potential_∂_∂R_coordinate::Float64
 end
 type NonadiabaticAreasConfiguration
   coordinate_start::Float64
