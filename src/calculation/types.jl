@@ -26,6 +26,7 @@ type PotentialAsymptotic <: Calculation
     this.state = a_state
     this.value = a_value
     this.coordinate = a_coordinate
+    return this
   end
 end
 

@@ -6,6 +6,8 @@ using DataFrames
 export Configuration
 export loadConfiguration
 export buildData
+export detectSinglePeakAreas
+export detectLandauZenerAreas
 
 include("constants/constants.jl")
 include("util/util.jl")
