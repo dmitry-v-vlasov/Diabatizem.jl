@@ -32,8 +32,8 @@
       "areas": {
         "single-peak": {
           "error-∂_∂R-peak": 0.01,
-          "vanishing-∂_∂R-value": 0.01,
-          "error-vanishing-∂_∂R-value": 0.0001,
+          "vanishing-∂_∂R-value": 0.02,
+          "error-vanishing-∂_∂R-value": 0.001,
           "error-potential-distance-minimal": 0.0005,
           "error-potential-distance-coordinate": 0.001,
           "error-potential-∂_∂R-coordinate": 0.1

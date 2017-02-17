@@ -40,9 +40,11 @@ abstract NonadiabaticArea <: Calculation
 type SinglePeakNonadiabaticArea <: NonadiabaticArea
   states::Tuple{Int, Int}
   coordinate_∂_∂R::Float64
+  value_∂_∂R::Float64
   coordinate_potentials::Float64
   coordinate_from::Float64
   coordinate_to::Float64
+  sign::Int
   function SinglePeakNonadiabaticArea() new() end
 end
 # ----------- non-adiabatic areas -----------
