@@ -79,6 +79,12 @@ type NonadiabaticAreasConfiguration
   nonadiabatic_areas::Dict{NonadiabaticAreaTypes, NonadiabaticAreaSettings}
 end
 
+type DiabatizationSettings
+  coordinate_start::Float64
+  coordinate_step::Float64
+  coordinate_stop::Float64
+end
+
 type CalculationSettings
   strategy::CalculationStrategy
   coordinate_start::Float64
@@ -87,6 +93,7 @@ type CalculationSettings
   coordinate_step_error::Float64
   asymptotics::AsymptoticSettings
   nonadiabatic_areas::NonadiabaticAreasConfiguration
+  diabatization::DiabatizationSettings
   utility::UtilitySettings
   interpolation::InterpolationSettings
 end
@@ -145,12 +152,13 @@ function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputD
 
   asymptoticSettings = loadAsymptotics(jss["asymptotics"], coordinate_start, coordinate_step, coordinate_step_error)
   nonadiabaticAreas = loadNonadiabaticAreas(jss["nonadiabatic-areas"], coordinate_start, coordinate_step, coordinate_piece, coordinate_step_error)
+  diabatization = loadDiabatizationSettings(jss["diabatization"])
   utilitySettings = loadUtilitySettings(jss["utility"])
   interpolationSettings = loadInterpolationSettings(jss["interpolation"])
 
   settings = CalculationSettings(strategy_name,
     coordinate_start, coordinate_step, coordinate_piece, coordinate_step_error,
-    asymptoticSettings, nonadiabaticAreas, utilitySettings, interpolationSettings)
+    asymptoticSettings, nonadiabaticAreas, diabatization, utilitySettings, interpolationSettings)
   return settings
 end
 
@@ -170,6 +178,14 @@ function loadUtilitySettings(js)
   channel_ionic_number = js["channel-ionic-number"]
   channel_lowest_number = js["channel-lowest-number"]
   return UtilitySettings(channel_ionic_number, channel_lowest_number)
+end
+
+function loadDiabatizationSettings(js)
+  return DiabatizationSettings(
+    js["coordinate-start"],
+    js["coordinate-step"],
+    js["coordinate-stop"]
+  )
 end
 
 function loadNonadiabaticAreas(js, p_coordinate_start, p_coordinate_step, p_coordinate_piece, p_coordinate_step_error)
