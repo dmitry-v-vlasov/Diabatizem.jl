@@ -72,9 +72,12 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
         R += ΔR
       end
 
-      maxima = Array{Tuple{Float64, Float64, Float64}, 1}()
-      minima = Array{Tuple{Float64, Float64, Float64}, 1}()
-
+      # ***********
+      # K. Villaverde, V. Kreinovich
+      # "A linear-time algorithm that locates local extrema of
+      # a function of one variable from interval measurement results"
+      # https://www.researchgate.net/publication/244415993_A_linear-time_algorithm_that_locates_local_extrema_of_a_function_of_one_variable_from_interval_measurement_results
+      # ***********
       n = size(table, 1)
       s = 0; M = table[1][2]; m = table[1][2]
       k = 1; xₖ = table[k][1]; yₖ = table[k][2]
