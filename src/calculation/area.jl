@@ -211,66 +211,57 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
     end
   end
 
-  # for i = 1:N, j = 1:N
-  #   if i < j && j - i == 1
-  #     trareas = areas[i, j]
-  #     if size(trareas, 1) > 0
-  #       println("*********** $i->$j")
-  #       for k = 1:size(trareas, 1)
-  #         area = trareas[k]
-  #         println("#####")
-  #         println("STATES:   $(area.states)")
-  #         println("SIGN:     $(area.sign > 0 ? '+' : '-')")
-  #         println("INTERVAL: [$(area.coordinate_from), $(area.coordinate_to)]")
-  #         println("PEAK:     $(area.coordinate_∂_∂R) -> $(area.value_∂_∂R)")
-  #         println("#####")
-  #       end
-  #       println("***********")
-  #     end
-  #   end
-  # end
-  # return
-
   return areas
 end
 
 function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Array{NonadiabaticArea, 1}, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
   N = size(M_Hₐ, 1)
-  areas_lz = Array{Array{SinglePeakNonadiabaticArea, 1}, 2}(N, N)
+  M_Α_lz = Array{Array{SinglePeakNonadiabaticArea, 1}, 2}(N, N)
+  fill!(M_Α_lz, Array{SinglePeakNonadiabaticArea, 1}())
 
-  area_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
-  ϵ_lz = abs(area_config.error_potential_∂_∂R_coordinate)
-  ϵₘᵢₙᵢₘᵤₘ = abs(area_config.error_potential_distance_coordinate)
+  Α_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
+  ϵ_lz = abs(Α_config.error_potential_∂_∂R_coordinate)
+  ϵₘᵢₙᵢₘᵤₘ = abs(Α_config.error_potential_distance_coordinate)
 
   for i = 1:N, j = 1:N
-    if i >= j && abs(i - j) ≠ 1
+    if i >= j || abs(i - j) ≠ 1
       continue
     end
+    M_Α_lz[i, j] = Array{SinglePeakNonadiabaticArea, 1}()
+    M_Α_lz[j, i] = Array{SinglePeakNonadiabaticArea, 1}()
 
-    candidate = areas[i, j]
-    Rₐ = candidate.coordinate_from; Rᵦ = candidate.coordinate_to
-    R₀ = candidate.coordinate_∂_∂R
+    Αₛ = areas[i, j]
+    for Α in Αₛ
+      Rₐ = Α.coordinate_from; Rᵦ = Α.coordinate_to
+      R₀ = Α.coordinate_∂_∂R; τ = Α.value_∂_∂R; σ = Α.sign
 
-    U₁(R) = M_Hₐ[i, i](R); U₂(R) = M_Hₐ[j, j](R);
-    ΔU(R) = abs(U₂(R) - U₁(R))
+      U₁(R) = M_Hₐ[i, i](R); U₂(R) = M_Hₐ[j, j](R);
+      ΔU(R) = abs(U₂(R) - U₁(R))
 
-    result = Optim.optimize(ΔU, Rₐ, Rᵦ, Optim.Brent())
-    Rₘᵢₙᵢₘᵤₘ = Optim.minimum(result)
+      result = Optim.optimize(ΔU, Rₐ, Rᵦ, Optim.Brent())
+      Rₘᵢₙᵢₘᵤₘ = Optim.minimizer(result)
 
-    if abs(Rₘᵢₙᵢₘᵤₘ - R₀) <= ϵ_lz
-      area_lz = SinglePeakNonadiabaticArea()
-      area_lz.states = (i, j)
-      area_lz.coordinate_∂_∂R = R₀; area_lz.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
-      area_lz.coordinate_from = Rₐ; area_lz.coordinate_to = Rᵦ
-      areas_lz[i, j] = area_lz
+      if abs(Rₘᵢₙᵢₘᵤₘ - R₀) <= ϵ_lz
+        Α_lz = SinglePeakNonadiabaticArea()
+        Α_lz.states = (i, j)
+        Α_lz.coordinate_∂_∂R = R₀; Α_lz.value_∂_∂R = τ
+        Α_lz.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
+        Α_lz.coordinate_from = Rₐ; Α_lz.coordinate_to = Rᵦ
+        Α_lz.sign = σ
+        push!(M_Α_lz[i, j], Α_lz)
 
-      area_lz_inv = SinglePeakNonadiabaticArea()
-      area_lz_inv.states = (j, i)
-      area_lz_inv.coordinate_∂_∂R = R₀; area_lz_inv.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
-      area_lz_inv.coordinate_from = Rₐ; area_lz_inv.coordinate_to = Rᵦ
-      areas_lz[j, i] = area_lz_inv
+        Α_lz_inv = SinglePeakNonadiabaticArea()
+        Α_lz_inv.states = (j, i)
+        Α_lz_inv.coordinate_∂_∂R = R₀; Α_lz_inv.value_∂_∂R = -τ
+        Α_lz_inv.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
+        Α_lz_inv.coordinate_from = Rₐ; Α_lz_inv.coordinate_to = Rᵦ
+        Α_lz_inv.sign = -σ
+        push!(M_Α_lz[j, i], Α_lz_inv)
+      else
+        # nothing
+      end
     end
-
-    return areas_lz
   end
+
+  return M_Α_lz
 end

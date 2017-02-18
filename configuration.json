@@ -36,7 +36,7 @@
           "error-vanishing-∂_∂R-value": 0.001,
           "error-potential-distance-minimal": 0.0005,
           "error-potential-distance-coordinate": 0.001,
-          "error-potential-∂_∂R-coordinate": 0.1
+          "error-potential-∂_∂R-coordinate": 0.5
         }
       }
     },
