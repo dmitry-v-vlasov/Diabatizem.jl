@@ -47,6 +47,23 @@ type SinglePeakNonadiabaticArea <: NonadiabaticArea
   sign::Int
   function SinglePeakNonadiabaticArea() new() end
 end
+
+type LandauZenerArea <: NonadiabaticArea
+  states::Tuple{Int, Int}
+  R₀::Float64
+  τ₀::Float64
+  Rₐ::Float64
+  Rᵦ::Float64
+  ∂_∂R::Function
+  function LandauZenerArea(instates::Tuple{Int, Int}, inR₀::Float64, inτ₀::Float64, inRₐ::Float64, inRᵦ::Float64)
+    this = new()
+    this.states = instates
+    this.R₀ = inR₀; this.τ₀ = inτ₀
+    this.Rₐ = inRₐ; this.Rᵦ = inRᵦ
+    this.∂_∂R = R -> this.τ₀ / ((R - this.R₀)^2 + 4*(this.τ₀)^2)
+    return this
+  end
+end
 # ----------- non-adiabatic areas -----------
 
 # ----------- diabatic data -----------
