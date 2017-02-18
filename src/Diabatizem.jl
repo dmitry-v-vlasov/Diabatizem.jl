@@ -17,5 +17,6 @@ include("data/data.jl")
 include("calculation/types.jl")
 include("calculation/area.jl")
 include("calculation/fit.jl")
+include("calculation/solver.jl")
 
 end # module
