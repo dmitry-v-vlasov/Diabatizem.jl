@@ -23,3 +23,18 @@ function dataColumnOfSymetricMatrix(i::Int, j::Int, N::Int)
     throw(DomainError("The equal line and column value '$i' is undefined for the (anti)symmetric matrix with zero main diagonal."))
   end
 end
+
+"""
+Convert vector element number to a pair of N×N matrix indices.
+"""
+function mpos(l::Int, N::Int)
+  dv = divrem(l, N)
+  return dv[1] == 0 ? (1, dv[2]) : (dv[1] + 1, dv[2])
+end
+
+"""
+Convert a pair of N×N matrix indices to a one-dimentional array index.
+"""
+function mvec(i::Int, j::Int, N::Int)
+  return N*(i - 1) + j
+end
