@@ -7,5 +7,6 @@ data = buildData(config.input_data.hamiltonian_adiabatic, config.input_data.coup
 areas = detectSinglePeakAreas(data.∂_∂R, config.settings.nonadiabatic_areas, 40.0);
 lz = detectLandauZenerAreas(data.Hₐ, areas, config.settings.nonadiabatic_areas, 40.0);
 lzz = fitSinglePeakCouplings(lz);
+pwf = deriveLandauZenerFunctions(lzz);
 ```
 
