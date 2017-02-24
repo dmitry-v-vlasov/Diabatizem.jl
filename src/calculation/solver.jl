@@ -11,7 +11,9 @@ function problemCauchy(;
   Xᵖᵒⁱⁿᵗˢ::Vector{Float64} = nothing,
   prod_function::Function = nothing,
   ϵʳᵉˡ::Float64 = 1e-3,
-  ϵᵃᵇˢ::Float64 = 1e-6)
+  ϵᵃᵇˢ::Float64 = 1e-6,
+  ∂_∂R::Array{Function, 2} = nothing,
+  ∂_∂Rˡᶻ::Array{Function, 2} = nothing)
 
   N = size(Y₀, 1)
 

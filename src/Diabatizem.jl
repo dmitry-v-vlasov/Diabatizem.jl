@@ -9,6 +9,7 @@ export buildData
 export detectSinglePeakAreas
 export detectLandauZenerAreas
 export fitSinglePeakCouplings
+export deriveLandauZenerFunctions
 
 include("constants/constants.jl")
 include("util/util.jl")

@@ -1,3 +1,5 @@
+using Roots
+
 """
 Make a simple fitting of a given single peak area with
 the Lorenz curve which is defined in the Landau-Zener model as
@@ -26,4 +28,50 @@ function fitSinglePeakCouplings(areas::Array{Array{SinglePeakNonadiabaticArea, 1
     end
   end
   return M_Αˡᶻ
+end
+
+function deriveLandauZenerFunctions(M_Αˡᶻ::Array{Array{LandauZenerArea, 1}, 2})
+  N = size(M_Αˡᶻ, 1)
+  M_∂_∂Rˡᶻ = Array{Function, 2}(N, N)
+  fill!(M_∂_∂Rˡᶻ, R -> 0.0)
+
+  for i = 1:N, j = 1:N
+    areas = M_Αˡᶻ[i, j]
+    areas_sorted = sort(areas, alg = InsertionSort, lt = (Α₁, Α₂) -> Α₁.R₀ < Α₂.R₀)
+    L = size(areas_sorted, 1)
+    functions = Vector{Tuple{Float64, Float64, Function}}()
+    breakpoints = Vector{Float64}()
+    if L > 1
+      for k = 1:L-1
+        Αₖ = areas_sorted[k]; Αₖ₁ = areas_sorted[k+1];
+        Rᵃ = Αₖ.R₀; Rᵇ = Αₖ₁.R₀;
+        Δ_∂_∂R(R) = abs(Αₖ.∂_∂R(R)) - abs(Αₖ₁.∂_∂R(R))
+        Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ = fzero(Δ_∂_∂R, Rᵃ, Rᵇ)
+        push!(breakpoints, Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)
+      end
+
+      Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗₚᵣₑᵥᵢₒᵤₛ = areas_sorted[1].Rₐ
+      for k = 1:L-1
+        Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ = breakpoints[k]
+        Αₖ = areas_sorted[k]; Αₖ₁ = areas_sorted[k+1];
+        push!(functions, (Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗₚᵣₑᵥᵢₒᵤₛ, Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ, Αₖ.∂_∂R))
+        Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗₚᵣₑᵥᵢₒᵤₛ = Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ
+      end
+      push!(functions, (Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗₚᵣₑᵥᵢₒᵤₛ, areas_sorted[L].Rᵦ, areas_sorted[L].∂_∂R))
+    elseif L == 1
+      push!(functions, (areas_sorted[1].Rₐ, areas_sorted[1].Rᵦ, areas_sorted[1].∂_∂R))
+    else
+      push!(functions, (0.0, Inf, R -> 0.0))
+    end
+
+    ∂_∂Rᵖⁱᵉᶜᵉʷⁱˢᵉ(R) = begin
+      nᶠ = searchsortedfirst(breakpoints, R)
+      ∂_∂Rᵖⁱᵉᶜᵉ = functions[nᶠ][3]
+      return ∂_∂Rᵖⁱᵉᶜᵉ(R)
+    end
+
+    M_∂_∂Rˡᶻ[i, j] = ∂_∂Rᵖⁱᵉᶜᵉʷⁱˢᵉ
+  end
+
+  return M_∂_∂Rˡᶻ
 end
