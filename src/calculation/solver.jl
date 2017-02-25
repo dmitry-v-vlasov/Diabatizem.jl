@@ -43,6 +43,7 @@ end
 
 function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, config::DiabatizationSettings)
   Rᵇᵉᵍⁱⁿ = config.coordinate_start; Rᵉⁿᵈ = config.coordinate_stop
+  sign_ΔR = sign(Rᵉⁿᵈ - Rᵇᵉᵍⁱⁿ)
   ΔRᵐᵃˣ = config.coordinate_step
 
   N = size(Hₐ, 1); Nᶜ = dataColumnOfSymetricMatrix(N-1, N, N)
@@ -61,8 +62,14 @@ function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function
   end
 
   R = Rᵇᵉᵍⁱⁿ
-  while R <= Rᵉⁿᵈ
-    push!(Rᵖᵒⁱⁿᵗˢ, R); R += ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
+  if sign_ΔR > 0
+    while R <= Rᵉⁿᵈ
+      push!(Rᵖᵒⁱⁿᵗˢ, R); R += sign_ΔR * ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
+    end
+  else
+    while R >= Rᵉⁿᵈ
+      push!(Rᵖᵒⁱⁿᵗˢ, R); R += sign_ΔR * ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
+    end
   end
 
   S = problemCauchy(
@@ -99,8 +106,8 @@ let
       ∂_∂Rᵐᵒᵈᵉˡ[i, j] = F_∂_∂Rᵐᵒᵈᵉˡ[i, j](R)
     end
 
-    dS_dR = (S*∂_∂R - ∂_∂R*S) - S*∂_∂Rᵐᵒᵈᵉˡ
-    # dS_dR = -∂_∂Rᵐᵒᵈᵉˡ*S
+    # dS_dR = (S*∂_∂R - ∂_∂R*S) - S*∂_∂Rᵐᵒᵈᵉˡ
+    dS_dR = -∂_∂Rᵐᵒᵈᵉˡ*S
     mat2vec!(dS_dR, dS_dR_v)
 
     return Sundials.CV_SUCCESS
