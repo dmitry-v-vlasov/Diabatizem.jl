@@ -10,6 +10,10 @@ export detectSinglePeakAreas
 export detectLandauZenerAreas
 export fitSinglePeakCouplings
 export deriveLandauZenerFunctions
+export transformationMatrix
+export diabatize
+export diagonalHᵈ
+export diagonalHᵈvec
 
 include("constants/constants.jl")
 include("util/util.jl")

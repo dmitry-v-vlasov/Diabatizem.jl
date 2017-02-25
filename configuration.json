@@ -43,7 +43,7 @@
     "diabatization": {
       "coordinate-start": 0.1,
       "coordinate-step": 0.01,
-      "coordinate-stop": 40.0
+      "coordinate-stop": 100.0
     },
     "utility": {
       "channel-ionic-number": -1,

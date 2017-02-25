@@ -23,24 +23,6 @@ type DirtyNonadiabaticArea <: NonadiabaticArea
   end
 end
 
-"""
-NTRS (NASA Technical Reports Server)
-Iott, J.; Haftka, R. T.; Adelman, H. M.
-"Selecting step sizes in sensitivity analysis by finite differences"
-https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19850025225.pdf
-"""
-function Δhₒₗ(ϵₐ, df_dx, d²f_dx²)
-  Φ₀ = abs(d²f_dx²) ⋅ (1 + df_dx*df_dx)
-  Φ = Φ₀ > 1e-4 ? Φ₀ : 1e-4
-  return 2⋅√(ϵₐ / Φ)
-end
-
-function Δhₒₚₜ(ΔRₛₜ, df_dx)
-  af = abs(df_dx)
-  Δh₀ = ΔRₛₜ / (Φᵧ * (af < 1 ? 1 : af))
-  return Δh₀ < ΔRₛₜ ? Δh₀ : ΔRₛₜ
-end
-
 function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
   area_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
 
@@ -68,7 +50,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
         τᵥ = τ(R)
         dτ_dR = derivative(τ, R)
         push!(table, (R, τᵥ))
-        ΔR = Δhₒₚₜ(ΔRₘₐₓ, dτ_dR)
+        ΔR = Δhₒₚₜʰ(ΔRₘₐₓ, dτ_dR, τᵥ)
         R += ΔR
       end
 
