@@ -20,4 +20,5 @@ plot!(pl, X, data.∂_∂R[3,4], label = "⟨B|∂/∂R|C⟩, Quantum-chemical d
 ![Comparison of a More Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling and Landau-Zener Model Curves](doc/ddrBC_NaH_comparison.png?raw=true "Comparison of a More Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling and Landau-Zener Model Curves")
 
 ## First Test
-![](doc/Uᴰ_NaH_V1_V2_V3_V4_pure_Landau_Zener.png)
+![](doc/Uᴰ_NaH_V1_V2_V3_V4_pure_Landau_Zener.png?raw=true)
+
