@@ -26,5 +26,5 @@ plot!(pl, X, data.∂_∂R[3,4], label = "⟨B|∂/∂R|C⟩, Quantum-chemical d
 ![](doc/Uᴰ_NaH_V1_V2_V3_V4_pure_Landau_Zener.png?raw=true)
 
 ---
-[Atomic Collision Theory Group ◀ Department of Theoretical Physics and Astronomy of the Herzen State Pedagogical University of Russia Departement of Optics of the Saint Petersburg State University](http://quasimol.herzen.spb.ru/who-we-are/research-staff)
+[**Atomic Collision Theory Group** ◀ Department of Theoretical Physics and Astronomy of the Herzen State Pedagogical University of Russia, Departement of Optics of the Saint Petersburg State University](http://quasimol.herzen.spb.ru/who-we-are/research-staff)
 
