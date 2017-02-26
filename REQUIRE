@@ -1,1 +1,9 @@
 julia 0.5
+Calculus
+JSON 0.8.3
+DataFrames 0.8.5
+DataStructures 0.5.2
+Optim 0.7.5
+Roots 0.3.0
+Sundials 0.7.0
+Formatting 0.2.0
