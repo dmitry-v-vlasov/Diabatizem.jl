@@ -7,5 +7,7 @@ plot!(pl, Rp, U[4]);
 
 plot!(pl, 0:0.01:100, data.Hₐ[1,1]);
 plot!(pl, 0:0.01:100, data.Hₐ[2,2]);
+plot!(pl, 0:0.01:100, data.Hₐ[3,3]);
+plot!(pl, 0:0.01:100, data.Hₐ[4,4]);
 
 pl
