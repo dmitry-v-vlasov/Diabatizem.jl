@@ -4,7 +4,7 @@
 """
   Calculates a column number in a data file for with a given
   symmetric or antisymmetric (square) matrix with ZEROs in the main diagonal by
-  its line an column indices.
+  its row an column indices.
 
   * i - matrix line
   * j - matrix column
