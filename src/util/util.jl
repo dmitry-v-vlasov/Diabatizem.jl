@@ -2,7 +2,7 @@
 # Miscellaneous utility functions
 # ---------------------------------
 """
-  Calculates a column number in a data file for with a given
+  Calculates a column number in a data file for a given
   symmetric or antisymmetric (square) matrix with ZEROs in the main diagonal by
   its row an column indices.
 
