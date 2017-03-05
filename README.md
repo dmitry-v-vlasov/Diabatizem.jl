@@ -41,8 +41,9 @@ plot!(pl, X, ∂_∂Rᴬ[3,4], label = "⟨B|∂/∂R|C⟩, Quantum-chemical dat
 ![Comparison of a More Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling and Landau-Zener Model Curves](doc/ddrBC_NaH_comparison.png?raw=true "Comparison of a More Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling and Landau-Zener Model Curves")
 
 ## Non-adiabatic Coupling Diabatization
+![Comparison of an Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling Before and After Diabatization](doc/ddrBC_NaH_diabatized.png?raw=true "Comparison of an Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling Before and After Diabatization")
 ```Julia
-uusing Plots
+using Plots
 
 X = 0:0.01:100;
 
@@ -53,7 +54,6 @@ pl = plot(title="Comparison of a \"Accurate\" (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ 
 plot!(pl, Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ[:, 6], label = "⟨B|∂/∂R|C⟩, diabatized");
 plot!(pl, X, ∂_∂Rᴬ[3, 4], label = "⟨B|∂/∂R|C⟩, adiabatic (Quantum-chemical data)")
 ```
-![Comparison of an Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling Before and After Diabatization](doc/ddrBC_NaH_diabatized.png?raw=true "Comparison of an Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling Before and After Diabatization")
 
 ## Potential Diabatization
 ```Julia
