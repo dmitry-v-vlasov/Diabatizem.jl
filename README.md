@@ -83,4 +83,4 @@ pl
 ![](doc/S_transformation_matrix_NaH.png?raw=true)
 
 ---
-[**Atomic Collision Theory Group** ◀ Department of Theoretical Physics and Astronomy of the Herzen State Pedagogical University of Russia, Departement of Optics of the Saint Petersburg State University](http://quasimol.herzen.spb.ru/who-we-are/research-staff)
+[**Atomic Collision Theory Group** ◀ Department of Theoretical Physics and Astronomy of the Herzen State Pedagogical University of Russia, Department of Optics of the Saint Petersburg State University](http://quasimol.herzen.spb.ru/who-we-are/research-staff)
