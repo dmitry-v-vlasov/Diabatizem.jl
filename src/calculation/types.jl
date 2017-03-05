@@ -7,7 +7,7 @@ using DataFrames
 # ------------------------------------------------------------------
 type ParameterMatrix
   distance::Float64
-  data::Array{Float64, Float64}
+  data::Array{Float64, 2}
   function ParameterMatrix() new() end
 end
 # ------------------------------------------------------------------

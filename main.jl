@@ -1,11 +1,19 @@
 using Diabatizem
-config = loadConfiguration("configuration.json");
-data = buildData(config.input_data.hamiltonian_adiabatic, config.input_data.coupling_∂_∂R_adiabatic, config.settings.interpolation);
-areas = detectSinglePeakAreas(data.∂_∂R, config.settings.nonadiabatic_areas, 40.0);
-lz = detectLandauZenerAreas(data.Hₐ, areas, config.settings.nonadiabatic_areas, 40.0);
-lzz = fitSinglePeakCouplings(lz);
-pwf = deriveLandauZenerFunctions(lzz);
-(Rp, S) = transformationMatrix(data.Hₐ, data.∂_∂R, pwf, config.settings.diabatization);
-(Rp, Hd) = diabatize(data.Hₐ, data.∂_∂R, Rp, S);
-U = diagonalHᵈvec(Hd);
 
+C = loadConfiguration("configuration.json")
+D = buildData(C.input_data.hamiltonian_adiabatic, C.input_data.coupling_∂_∂R_adiabatic, C.settings.interpolation)
+
+Hᴬ = D.Hₐ
+∂_∂Rᴬ = D.∂_∂R
+
+A = detectSinglePeakAreas(∂_∂Rᴬ, C.settings.nonadiabatic_areas, 40.0)
+Aˡᶻ = detectLandauZenerAreas(Hᴬ, A, C.settings.nonadiabatic_areas, 40.0)
+Aˡᶻᶠ = fitLandauZenerCouplings(Aˡᶻ)
+∂_∂Rᵐᵒᵈᵉˡ = deriveLandauZenerCouplingFunctions(Aˡᶻᶠ)
+
+(Rᵖᵒⁱⁿᵗˢ,
+  S, Sᵈᵃᵗᵃ) = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, C.settings.diabatization)
+(Rᵖᵒⁱⁿᵗˢ,
+  Hᴰ, ∂_∂Rᴰ) = diabatize(Hᴬ, ∂_∂Rᴬ, Rᵖᵒⁱⁿᵗˢ, S)
+Uᴰᵈᵃᵗᵃ = matl2matldiag(Hᴰ)
+∂_∂Rᴰᵈᵃᵗᵃ = matl2matlupperx(∂_∂Rᴰ)

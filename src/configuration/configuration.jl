@@ -2,8 +2,6 @@ using JSON
 using DataFrames
 using DataStructures
 
-const EMPTY = ""
-
 type InputPaths
   file_hamiltonian_adiabatic::AbstractString
   file_coupling_∂_∂R_adiabatic::AbstractString

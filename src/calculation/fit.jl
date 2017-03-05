@@ -11,7 +11,7 @@ Reference:
 Выпуск № 15 / том 6 / 2006
 http://cyberleninka.ru/article/n/sechenie-vozbuzhdeniya-i-model-landau-zinera
 """
-function fitSinglePeakCouplings(areas::Array{Array{SinglePeakNonadiabaticArea, 1}, 2})
+function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}, 2})
   N = size(areas, 1)
   M_Αˡᶻ = Array{Array{LandauZenerArea, 1}, 2}(N, N)
   fill!(M_Αˡᶻ, Array{LandauZenerArea, 1}())
@@ -30,7 +30,7 @@ function fitSinglePeakCouplings(areas::Array{Array{SinglePeakNonadiabaticArea, 1
   return M_Αˡᶻ
 end
 
-function deriveLandauZenerFunctions(M_Αˡᶻ::Array{Array{LandauZenerArea, 1}, 2})
+function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerArea}, 2})
   N = size(M_Αˡᶻ, 1)
   M_∂_∂Rˡᶻ = Array{Function, 2}(N, N)
   fill!(M_∂_∂Rˡᶻ, R -> 0.0)

@@ -1,44 +1,24 @@
 using Calculus
 using Sundials
 
-function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖᵒⁱⁿᵗˢ::Array{Float64, 1}, Sˡⁱˢᵗ::Array{Array{Float64, 2}, 1})
+function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, Sˡ::Vector{Array{Float64, 2}})
   Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
-  Hᵈ = Array{Array{Float64, 2}, 1}(Nᵖᵒⁱⁿᵗˢ)
+  Hᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  ∂_∂Rᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  Sᶠᵘⁿᶜ = matl2matfsl(Rᵖᵒⁱⁿᵗˢ, Sˡ)
   for i = 1:Nᵖᵒⁱⁿᵗˢ
-    R = Rᵖᵒⁱⁿᵗˢ[i]; S = Sˡⁱˢᵗ[i]
-    Hᴬ = matf2mat(R, Hₐ)
-    Hᴰ = inv(S)*Hᴬ*S
-    Hᵈ[i] = Hᴰ
-  end
-  return Rᵖᵒⁱⁿᵗˢ, Hᵈ
-end
+    R = Rᵖᵒⁱⁿᵗˢ[i];
+    S = Sˡ[i];
+    S⁻¹ = inv(S);
+    ∇S = derivative.(Sᶠᵘⁿᶜ, R)
+    Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R)
 
-function diagonalHᵈ(Hᵈ::Array{Array{Float64, 2}, 1})
-  Nᵖᵒⁱⁿᵗˢ = size(Hᵈ, 1)
-  Hᵈⁱᵃᵍ = Array{Vector{Float64}, 1}(Nᵖᵒⁱⁿᵗˢ)
-  for i = 1:Nᵖᵒⁱⁿᵗˢ
-    N = size(Hᵈ[i], 1)
-    H_vector = Vector{Float64}(N)
-    for k = 1:N
-      H_vector[k] = Hᵈ[i][k, k]
-    end
-    Hᵈⁱᵃᵍ[i] = H_vector
-  end
-  return Hᵈⁱᵃᵍ
-end
+    Hᴰ = S⁻¹*Hᴬ*S
+    ∂_∂Rᴰ = S⁻¹*∂_∂Rᴬ*S + S⁻¹*∇S
 
-function diagonalHᵈvec(Hᵈ::Array{Array{Float64, 2}, 1})
-  N = size(Hᵈ[1], 1)
-  Nᵖᵒⁱⁿᵗˢ = size(Hᵈ, 1)
-  Hᵈⁱᵃᵍ = Vector{Vector{Float64}}(N)
-  for i = 1:N
-    H_vector = Vector{Float64}(Nᵖᵒⁱⁿᵗˢ)
-    for k = 1:Nᵖᵒⁱⁿᵗˢ
-      H_vector[k] = Hᵈ[k][i, i]
-    end
-    Hᵈⁱᵃᵍ[i] = H_vector
+    Hᵈ[i] = Hᴰ; ∂_∂Rᵈ[i] = ∂_∂Rᴰ
   end
-  return Hᵈⁱᵃᵍ
+  return Rᵖᵒⁱⁿᵗˢ, Hᵈ, ∂_∂Rᵈ
 end
 
 function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, config::DiabatizationSettings)
@@ -72,14 +52,14 @@ function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function
     end
   end
 
-  S = problemCauchy(
+  S, Sᵈᵃᵗᵃ = problemCauchy(
     Rᵖᵒⁱⁿᵗˢ, S₀;
     prod_function = diabatizationODE_function,
     data = (N, ∂_∂R, ∂_∂Rᵐᵒᵈᵉˡ),
     ϵʳᵉˡ = 1e-5, ϵᵃᵇˢ = 1e-10
   )
 
-  return Rᵖᵒⁱⁿᵗˢ, S
+  return Rᵖᵒⁱⁿᵗˢ[end:-1:1], S[end:-1:1], Sᵈᵃᵗᵃ[end:-1:1, 1:1:end]
 end
 
 let
@@ -137,7 +117,7 @@ function problemCauchy(
   Nᵖᵒⁱⁿᵗˢ = size(Yʳᵉˢ, 1)
   Nˢᵒˡᵘᵗⁱᵒⁿˢ = size(Yʳᵉˢ, 2)
   if Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ N*N throw(ErrorException("Unexpected: Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ N×N: $Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ $N×$N ($(N*N))")) end
-  Y = Array{Array{Float64, 2}, 1}(Nᵖᵒⁱⁿᵗˢ)
+  Y = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
   for k = 1:Nᵖᵒⁱⁿᵗˢ
     Yₖ = Array{Float64, 2}(N, N)
     for l = 1:N*N
@@ -147,5 +127,5 @@ function problemCauchy(
     Y[k] = Yₖ
   end
 
-  return Y
+  return Y, Yʳᵉˢ
 end

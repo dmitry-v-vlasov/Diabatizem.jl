@@ -6,14 +6,18 @@ using DataFrames
 export Configuration
 export loadConfiguration
 export buildData
+
 export detectSinglePeakAreas
 export detectLandauZenerAreas
-export fitSinglePeakCouplings
-export deriveLandauZenerFunctions
+export fitLandauZenerCouplings
+export deriveLandauZenerCouplingFunctions
+
 export transformationMatrix
 export diabatize
-export diagonalHᵈ
-export diagonalHᵈvec
+
+export matl2matldiag, matl2matlupperx
+export mpos, mvec
+export int2indexsub, int2molstate
 
 include("constants/constants.jl")
 include("util/util.jl")

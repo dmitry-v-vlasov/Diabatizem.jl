@@ -2,22 +2,20 @@ using Calculus
 using Optim
 using Formatting
 
-const Φᵧ = 1.6180339887498948482
-
 type DirtyNonadiabaticArea <: NonadiabaticArea
   states::Tuple{Int, Int}
   coordinate_from::Float64
   coordinate_to::Float64
-  peaks::Array{Tuple{Float64, Float64}, 1}
-  pits::Array{Tuple{Float64, Float64}, 1}
+  peaks::Vector{Tuple{Float64, Float64}}
+  pits::Vector{Tuple{Float64, Float64}}
   sign::Int
   function DirtyNonadiabaticArea()
     this = new()
     this.states = (-1, -1)
     this.coordinate_from = -1
     this.coordinate_to = -1
-    this.peaks = Array{Tuple{Float64, Float64}, 1}()
-    this.pits = Array{Tuple{Float64, Float64}, 1}()
+    this.peaks = Vector{Tuple{Float64, Float64}}()
+    this.pits = Vector{Tuple{Float64, Float64}}()
     this.sign = 0
     return this
   end
@@ -27,8 +25,8 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
   area_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
 
   N = size(M_∂_∂R, 1)
-  areas = Array{Array{NonadiabaticArea, 1}, 2}(N, N)
-  fill!(areas, Array{NonadiabaticArea, 1}())
+  areas = Array{Vector{NonadiabaticArea}, 2}(N, N)
+  fill!(areas, Vector{NonadiabaticArea}())
 
   Rₛₜₐᵣₜ = nonadiabatic_config.coordinate_start; ΔRₘₐₓ = nonadiabatic_config.coordinate_step; Rₛₜₒₚ = Rstop
   ΔRₚᵢₑₛₑ = nonadiabatic_config.coordinate_piece
@@ -40,10 +38,10 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
 
   for i = 1:N, j = 1:N
     if i < j && j - i == 1
-      dirty_areas = Array{DirtyNonadiabaticArea, 1}()
-      areas[i, j] = Array{NonadiabaticArea, 1}()
+      dirty_areas = Vector{DirtyNonadiabaticArea}()
+      areas[i, j] = Vector{NonadiabaticArea}()
 
-      table = Array{Tuple{Float64, Float64}, 1}()
+      table = Vector{Tuple{Float64, Float64}}()
       τ = M_∂_∂R[i, j]
       R = Rₛₜₐᵣₜ
       while R <= Rₛₜₒₚ
@@ -113,7 +111,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
             M = max(M, yₖ)
             s = 1
           else
-            for l in convert(Array{Int}, linspace(k-1, 1, k-1))
+            for l in convert(Vector{Int}, linspace(k-1, 1, k-1))
               xₗ = table[l][1]; yₗ = table[l][2]
               if yₗ < Mₑ
                 # -----------
@@ -141,7 +139,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
             m = min(m, yₖ)
             s = -1
           else
-            for l in convert(Array{Int}, linspace(k-1, 1, k-1))
+            for l in convert(Vector{Int}, linspace(k-1, 1, k-1))
               xₗ = table[l][1]; yₗ = table[l][2]
               if yₗ > mₑ
                 # -----------
@@ -169,7 +167,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
       end
 
       if size(dirty_areas, 1) > 0
-        single_peak_areas = Array{DirtyNonadiabaticArea, 1}()
+        single_peak_areas = Vector{DirtyNonadiabaticArea}()
         for darea in dirty_areas
           if size(darea.peaks, 1) == 1 && size(darea.pits, 1) == 0
             dpeak = first(darea.peaks)
@@ -199,10 +197,10 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
   return areas
 end
 
-function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Array{NonadiabaticArea, 1}, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
+function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{NonadiabaticArea}, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
   N = size(M_Hₐ, 1)
-  M_Αˡᶻ = Array{Array{SinglePeakNonadiabaticArea, 1}, 2}(N, N)
-  fill!(M_Αˡᶻ, Array{SinglePeakNonadiabaticArea, 1}())
+  M_Αˡᶻ = Array{Vector{SinglePeakNonadiabaticArea}, 2}(N, N)
+  fill!(M_Αˡᶻ, Vector{SinglePeakNonadiabaticArea}())
 
   Α_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
   ϵˡᶻ = abs(Α_config.error_potential_∂_∂R_coordinate)
@@ -212,8 +210,8 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Array{N
     if i >= j || abs(i - j) ≠ 1
       continue
     end
-    M_Αˡᶻ[i, j] = Array{SinglePeakNonadiabaticArea, 1}()
-    M_Αˡᶻ[j, i] = Array{SinglePeakNonadiabaticArea, 1}()
+    M_Αˡᶻ[i, j] = Vector{SinglePeakNonadiabaticArea}()
+    M_Αˡᶻ[j, i] = Vector{SinglePeakNonadiabaticArea}()
 
     Αₛ = areas[i, j]
     for Α in Αₛ
