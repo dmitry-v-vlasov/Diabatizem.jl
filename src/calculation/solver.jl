@@ -59,7 +59,20 @@ function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function
     ϵʳᵉˡ = 1e-5, ϵᵃᵇˢ = 1e-10
   )
 
+  S
+
   return Rᵖᵒⁱⁿᵗˢ[end:-1:1], S[end:-1:1], Sᵈᵃᵗᵃ[end:-1:1, 1:1:end]
+end
+
+function error_S(S::Vector{Array{Float64, 2}})
+  L = size(S, 1)
+  N = size(S[1], 1)
+  ϵ_S = Vector{Array{Float64, 2}}(L)
+  for l = 1:L
+    ϵ_S[l] = S[l]'*S[l]
+  end
+  ϵ_Sᵈᵃᵗᵃ = matl2mdata(ϵ_S)
+  return ϵ_S, ϵ_Sᵈᵃᵗᵃ
 end
 
 let
@@ -86,8 +99,9 @@ let
       ∂_∂Rᵐᵒᵈᵉˡ[i, j] = F_∂_∂Rᵐᵒᵈᵉˡ[i, j](R)
     end
 
-    # dS_dR = (S*∂_∂R - ∂_∂R*S) - S*∂_∂Rᵐᵒᵈᵉˡ
+    #dS_dR = (S*∂_∂R - ∂_∂R*S) - S*∂_∂Rᵐᵒᵈᵉˡ
     dS_dR = -∂_∂Rᵐᵒᵈᵉˡ*S
+
     mat2vec!(dS_dR, dS_dR_v)
 
     return Sundials.CV_SUCCESS

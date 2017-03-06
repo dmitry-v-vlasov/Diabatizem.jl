@@ -13,6 +13,7 @@ Aˡᶻᶠ = fitLandauZenerCouplings(Aˡᶻ)
 
 (Rᵖᵒⁱⁿᵗˢ,
   S, Sᵈᵃᵗᵃ) = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, C.settings.diabatization)
+(ϵ_S, ϵ_Sᵈᵃᵗᵃ) = error_S(S)
 (Rᵖᵒⁱⁿᵗˢ,
   Hᴰ, ∂_∂Rᴰ) = diabatize(Hᴬ, ∂_∂Rᴬ, Rᵖᵒⁱⁿᵗˢ, S)
 Uᴰᵈᵃᵗᵃ = matl2matldiag(Hᴰ)

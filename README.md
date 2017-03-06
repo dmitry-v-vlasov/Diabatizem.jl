@@ -79,8 +79,10 @@ pl
 ```
 ![](doc/Uᴰ_NaH_V1_V2_V3_V4_pure_Landau_Zener.png?raw=true)
 
-### Transformation Matrix
+### Transformation Matrix S
 ![](doc/S_transformation_matrix_NaH.png?raw=true)
 
+#### Unity Matrix as a Product Sᵀ⋅S
+![](doc/St_S_product_matrix_NaH.png?raw=true)
 ---
 [**Atomic Collision Theory Group** ◀ Department of Theoretical Physics and Astronomy of the Herzen State Pedagogical University of Russia, Department of Optics of the Saint Petersburg State University](http://quasimol.herzen.spb.ru/who-we-are/research-staff)

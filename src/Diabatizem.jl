@@ -12,10 +12,10 @@ export detectLandauZenerAreas
 export fitLandauZenerCouplings
 export deriveLandauZenerCouplingFunctions
 
-export transformationMatrix
+export transformationMatrix, error_S
 export diabatize
 
-export matl2matldiag, matl2matlupperx
+export matl2matldiag, matl2matlupperx, matl2mdata
 export mpos, mvec
 export int2indexsub, int2molstate
 
