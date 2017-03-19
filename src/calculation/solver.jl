@@ -1,5 +1,6 @@
 using Calculus
 using Sundials
+using Logging
 
 function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, Sˡ::Vector{Array{Float64, 2}})
   Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
@@ -21,7 +22,9 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖ�
   return Rᵖᵒⁱⁿᵗˢ, Hᵈ, ∂_∂Rᵈ
 end
 
-function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, config::DiabatizationSettings)
+function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, Rᵈᵃᵗᵃ::Vector{Float64}, config::DiabatizationSettings)
+  Logging.configure(level=INFO)
+
   Rᵇᵉᵍⁱⁿ = config.coordinate_start; Rᵉⁿᵈ = config.coordinate_stop
   sign_ΔR = sign(Rᵉⁿᵈ - Rᵇᵉᵍⁱⁿ)
   ΔRᵐᵃˣ = config.coordinate_step
@@ -29,7 +32,6 @@ function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function
   N = size(Hₐ, 1); Nᶜ = dataColumnOfSymetricMatrix(N-1, N, N)
   Rᵖᵒⁱⁿᵗˢ = Vector{Float64}(); S₀ = eye(N, N)
 
-  ΔRᵗᵐᵖ = Vector{Float64}(Nᶜ)
   ΔR_∂_∂R(i::Int, j::Int, R::Float64) = Δhₒₚₜʰ(ΔRᵐᵃˣ, derivative(∂_∂R[i, j], R), ∂_∂R[i, j](R))
   ΔRᵐⁱⁿ(R::Float64, ΔRᵗᵉᵐᵖ::Vector{Float64}) = begin
     for i = 1:N, j = 1:N
@@ -41,14 +43,29 @@ function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function
     return minimum(ΔRᵗᵉᵐᵖ)
   end
 
-  R = Rᵇᵉᵍⁱⁿ
+  ΔRᵗᵐᵖ = Vector{Float64}(Nᶜ)
+  Lᵈᵃᵗᵃ = size(Rᵈᵃᵗᵃ, 1)
   if sign_ΔR > 0
-    while R <= Rᵉⁿᵈ
-      push!(Rᵖᵒⁱⁿᵗˢ, R); R += sign_ΔR * ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
+    lᵇᵉᵍⁱⁿ = findfirst(Rᵢ -> Rᵢ >= Rᵇᵉᵍⁱⁿ, Rᵈᵃᵗᵃ); lᵇᵉᵍⁱⁿ = lᵇᵉᵍⁱⁿ == 0 ? 1 : lᵇᵉᵍⁱⁿ
+    lᵉⁿᵈ = findfirst(Rᵢ -> Rᵢ >= Rᵉⁿᵈ, Rᵈᵃᵗᵃ); lᵉⁿᵈ = lᵉⁿᵈ == 0 ? Lᵈᵃᵗᵃ : lᵉⁿᵈ
+    for l = lᵇᵉᵍⁱⁿ:(lᵉⁿᵈ - 1)
+      Rₗᵃ = Rᵈᵃᵗᵃ[l]; Rₗᵇ = Rᵈᵃᵗᵃ[l + 1]
+      R = Rₗᵃ
+      while R <= Rₗᵇ
+        push!(Rᵖᵒⁱⁿᵗˢ, R); R += ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
+      end
     end
   else
-    while R >= Rᵉⁿᵈ
-      push!(Rᵖᵒⁱⁿᵗˢ, R); R += sign_ΔR * ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
+    Rᵈᵃᵗᵃᵢₙᵥ = reverse(Rᵈᵃᵗᵃ)
+    lᵇᵉᵍⁱⁿ = findfirst(Rᵢ -> Rᵢ <= Rᵇᵉᵍⁱⁿ, Rᵈᵃᵗᵃᵢₙᵥ); lᵇᵉᵍⁱⁿ = lᵇᵉᵍⁱⁿ == 0 ? 1 : lᵇᵉᵍⁱⁿ
+    lᵉⁿᵈ = findfirst(Rᵢ -> Rᵢ <= Rᵉⁿᵈ, Rᵈᵃᵗᵃᵢₙᵥ); lᵉⁿᵈ = lᵉⁿᵈ == 0 ? Lᵈᵃᵗᵃ : lᵉⁿᵈ
+    info("LL : $lᵇᵉᵍⁱⁿ , $lᵉⁿᵈ, $Lᵈᵃᵗᵃ")
+    for l = lᵇᵉᵍⁱⁿ:(lᵉⁿᵈ - 1)
+      Rₗᵃ = Rᵈᵃᵗᵃᵢₙᵥ[l]; Rₗᵇ = Rᵈᵃᵗᵃᵢₙᵥ[l + 1]
+      R = Rₗᵃ
+      while R >= Rₗᵇ
+        push!(Rᵖᵒⁱⁿᵗˢ, R); R -= ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
+      end
     end
   end
 
@@ -58,8 +75,6 @@ function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function
     data = (N, ∂_∂R, ∂_∂Rᵐᵒᵈᵉˡ),
     ϵʳᵉˡ = 1e-5, ϵᵃᵇˢ = 1e-10
   )
-
-  S
 
   return Rᵖᵒⁱⁿᵗˢ[end:-1:1], S[end:-1:1], Sᵈᵃᵗᵃ[end:-1:1, 1:1:end]
 end

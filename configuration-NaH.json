@@ -1,8 +1,8 @@
 {
   "input-data": {
-    "hamiltonian-adiabatic": "pot-CaH.dsv",
-    "coupling_∂_∂R_adiabatic": "ddr-CaH.dsv",
-    "coupling_∂_∂R_adiabatic_model": "ddr-CaH.dsv"
+    "hamiltonian-adiabatic": "pot-pspot.dsv",
+    "coupling_∂_∂R_adiabatic": "ddr-pspot.dsv",
+    "coupling_∂_∂R_adiabatic_model": "ddr-pspot.dsv"
   },
   "output-data": {
     "hamiltonian-diabatic": "potentials-diabatic.dsv",
@@ -12,13 +12,13 @@
   "settings": {
     "strategy": "Landau-Zener-with-external-model-data",
     "coordinate-start": 0.1,
-    "coordinate-step": 0.00001,
-    "coordinate-piece": 0.00005,
+    "coordinate-step": 0.01,
+    "coordinate-piece": 0.005,
     "coordinate-step-error": 1e-8,
     "asymptotics": {
       "coordinate-start": 0.1,
-      "coordinate-step": 0.0005,
-      "coordinate-step-error": 1e-9,
+      "coordinate-step": 0.01,
+      "coordinate-step-error": 1e-8,
       "coordinate-safety-step": 1.0,
       "potential-asymptotic-value-error": 0.0005,
       "∂_∂R-asymptotic-value-error": 0.0005,
@@ -26,14 +26,14 @@
     },
     "nonadiabatic-areas": {
       "coordinate-start": 0.1,
-      "coordinate-step": 0.00001,
-      "coordinate-piece": 0.00005,
-      "coordinate-step-error": 1e-9,
+      "coordinate-step": 0.01,
+      "coordinate-piece": 0.05,
+      "coordinate-step-error": 1e-8,
       "areas": {
         "single-peak": {
-          "error-∂_∂R-peak": 0.01,
+          "error-∂_∂R-peak": 0.005,
           "vanishing-∂_∂R-value": 0.02,
-          "error-vanishing-∂_∂R-value": 0.015,
+          "error-vanishing-∂_∂R-value": 0.018,
           "error-potential-distance-minimal": 0.0005,
           "error-potential-distance-coordinate": 0.001,
           "error-potential-∂_∂R-coordinate": 0.5
@@ -42,7 +42,7 @@
     },
     "diabatization": {
       "coordinate-start": 100.1,
-      "coordinate-step": 0.00001,
+      "coordinate-step": 0.01,
       "coordinate-stop": 0.1
     },
     "utility": {
@@ -50,7 +50,7 @@
       "channel-lowest-number": 1
     },
     "interpolation": {
-      "hamiltonian": "spline-linear",
+      "hamiltonian": "spline-cubic",
       "coupling-∂_∂R": "spline-linear"
     }
   }

@@ -1,6 +1,7 @@
 using Calculus
 using Optim
 using Formatting
+using Logging
 
 type DirtyNonadiabaticArea <: NonadiabaticArea
   states::Tuple{Int, Int}
@@ -21,35 +22,52 @@ type DirtyNonadiabaticArea <: NonadiabaticArea
   end
 end
 
-function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
-  area_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
-
-  N = size(M_∂_∂R, 1)
-  areas = Array{Vector{NonadiabaticArea}, 2}(N, N)
-  fill!(areas, Vector{NonadiabaticArea}())
+function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃᵗᵃ::Array{Float64, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
+  Logging.configure(level=INFO)
 
   Rₛₜₐᵣₜ = nonadiabatic_config.coordinate_start; ΔRₘₐₓ = nonadiabatic_config.coordinate_step; Rₛₜₒₚ = Rstop
   ΔRₚᵢₑₛₑ = nonadiabatic_config.coordinate_piece
   ϵₐ_y = abs(nonadiabatic_config.coordinate_step_error)
 
+  # -----------
+  M_∂_∂R_sorted = sortrows(M_∂_∂Rᵈᵃᵗᵃ; by=row->(row[1]))
+  M_∂_∂R_vector_filtered = Vector{Vector{Float64}}()
+  for row in IteratorRow(M_∂_∂R_sorted)
+    R = row[1]
+    if Rₛₜₐᵣₜ <= R <= Rₛₜₒₚ
+      push!(M_∂_∂R_vector_filtered, row)
+    end
+  end
+  L = size(M_∂_∂R_vector_filtered, 1); Nᶜ = size(M_∂_∂R_vector_filtered[1], 1)
+  M_∂_∂Rᵍᵒᵒᵈ = Array{Float64, 2}(L, Nᶜ)
+  for l = 1:L
+    M_∂_∂Rᵍᵒᵒᵈ[l, :] = M_∂_∂R_vector_filtered[l]
+  end
+  # -----------
+
+  area_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
   ϵₚₑₐₖ = abs(area_config.error_∂_∂R_peak)
   yₛₘₐₗₗ = abs(area_config.vanishing_∂_∂R_value)
   ϵ_yₛₘₐₗₗ = abs(area_config.error_vanishing_∂_∂R_value)
 
+  N = size(M_∂_∂R, 1)
+  areas = Array{Vector{NonadiabaticArea}, 2}(N, N)
+  fill!(areas, Vector{NonadiabaticArea}())
+
+  info("Single peak non-adiabatic area detection.")
+  info("Search configuration: [$Rₛₜₐᵣₜ, $Rₛₜₒₚ], ΔRₘₐₓ=$ΔRₘₐₓ; R in data table: [$(M_∂_∂Rᵍᵒᵒᵈ[1, 1]), $(M_∂_∂Rᵍᵒᵒᵈ[L, 1])]; ϵ(⟨|∂/∂R|⟩ₚₑₐₖ)=$ϵₚₑₐₖ; ⟨|∂/∂R|⟩ₛₘₐₗₗ=$yₛₘₐₗₗ; ϵ(⟨|∂/∂R|⟩ₛₘₐₗₗ)=$ϵ_yₛₘₐₗₗ")
   for i = 1:N, j = 1:N
     if i < j && j - i == 1
+      info("⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩ Scanning ⟨$i|∂/∂R|$j⟩ ⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩")
+      τ = M_∂_∂R[i, j]
+
       dirty_areas = Vector{DirtyNonadiabaticArea}()
       areas[i, j] = Vector{NonadiabaticArea}()
 
       table = Vector{Tuple{Float64, Float64}}()
-      τ = M_∂_∂R[i, j]
-      R = Rₛₜₐᵣₜ
-      while R <= Rₛₜₒₚ
-        τᵥ = τ(R)
-        dτ_dR = derivative(τ, R)
-        push!(table, (R, τᵥ))
-        ΔR = Δhₒₚₜʰ(ΔRₘₐₓ, dτ_dR, τᵥ)
-        R += ΔR
+      for row in IteratorRow(M_∂_∂Rᵍᵒᵒᵈ)
+        R = row[1]; τᵗ = row[dataColumnOfSymetricMatrix(i, j, N) + 1]
+        push!(table, (R, τᵗ))
       end
 
       # ***********
@@ -62,20 +80,22 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
       s = 0; M = table[1][2]; m = table[1][2]
       k = 1; xₖ = table[k][1]; yₖ = table[k][2]
       # -----------
-      σₖ = sign(yₖ); χₖ = abs(abs(yₖ) - abs(yₛₘₐₗₗ))
+      σₖ = sign(yₖ); χₖ = abs(yₖ) > abs(yₛₘₐₗₗ) ? abs(abs(yₖ) - abs(yₛₘₐₗₗ)) : abs(yₖ)
       ℷ = false; ℵ = χₖ > ϵ_yₛₘₐₗₗ
       Α = nothing
       # -----------
       for k = 2:n
         xₖ = table[k][1]; yₖ = table[k][2]
         # -----------
-        χₖ = abs(abs(yₖ) - abs(yₛₘₐₗₗ))
+        χₖ = abs(yₖ) > abs(yₛₘₐₗₗ) ? abs(abs(yₖ) - abs(yₛₘₐₗₗ)) : abs(yₖ)
         if ℵ
           ℵ = χₖ > ϵ_yₛₘₐₗₗ
+          #info("ℵ was true and now ℵ=$ℵ; χₖ=$χₖ; ϵ_yₛₘₐₗₗ=$ϵ_yₛₘₐₗₗ; xₖ=$xₖ; yₖ=$yₖ")
         else
           σₖ = sign(yₖ)
           Αₛₜₐᵣₜ = (χₖ > ϵ_yₛₘₐₗₗ && σₖ > 0 && s == 1) || (χₖ > ϵ_yₛₘₐₗₗ && σₖ < 0 && s == -1)
           Αₛₜₒₚ = (χₖ <= ϵ_yₛₘₐₗₗ && σₖ > 0 && s == -1) || (χₖ <= ϵ_yₛₘₐₗₗ && σₖ < 0 && s == 1)
+          #info("ℵ was false anf now ℵ=$ℵ; χₖ=$χₖ; ϵ_yₛₘₐₗₗ=$ϵ_yₛₘₐₗₗ; σₖ=$σₖ; s=$s; ℷ=$ℷ; Αₛₜₐᵣₜ=$Αₛₜₐᵣₜ; Αₛₜₒₚ=$Αₛₜₒₚ; xₖ=$xₖ; yₖ=$yₖ")
           if Αₛₜₐᵣₜ
             if !ℷ
               ℷ = true
@@ -83,12 +103,14 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
               Α.states = (i, j)
               Α.coordinate_from = xₖ
               Α.sign = σₖ
+              info("Αₛₜₐᵣₜ at $(Α.coordinate_from); χₖ=$χₖ; yₖ=$yₖ; ℵ=$ℵ; ℷ=$ℷ")
             end
           elseif Αₛₜₒₚ
             if ℷ
               ℷ = false
               Α.coordinate_to = xₖ
               push!(dirty_areas, Α)
+              info("Αₛₜₒₚ at $(Α.coordinate_to); χₖ=$χₖ; yₖ=$yₖ; ℵ=$ℵ; ℷ=$ℷ")
             end
           else
             # nothing
@@ -115,17 +137,20 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
               xₗ = table[l][1]; yₗ = table[l][2]
               if yₗ < Mₑ
                 # -----------
-                if Α ≠ nothing
+                if ℷ
                   τᵢₙᵥ = R -> -τ(R)
                   result = Optim.optimize(τᵢₙᵥ, xₗ, xₖ, Optim.Brent())
                   xₘₐₓ = Optim.minimizer(result)
+                  τₘₐₓ = -Optim.minimum(result)
                   if Α.sign > 0
-                    push!(Α.peaks, (xₘₐₓ, τ(xₘₐₓ)))
+                    push!(Α.peaks, (xₘₐₓ, τₘₐₓ))
                   else
-                    push!(Α.pits, (xₘₐₓ, τ(xₘₐₓ)))
+                    push!(Α.pits, (xₘₐₓ, τₘₐₓ))
                   end
+                  info("𝔐aximum of ⟨$i|∂/∂R|$j⟩ found: Rₘₐₓ=$(format("{:.5f}", xₘₐₓ)); τ(Rₘₐₓ)=$(format("{:.6e}", τₘₐₓ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))")
                 end
                 # -----------
+                #info("ALG: Found function maximum in an area; τ(xₘₐₓ)≈$(M - ϵₚₑₐₖ); xₗ=$xₗ; xₖ=$xₖ")
                 #maximum = (xₗ, xₖ, M - ϵₚₑₐₖ)
                 #push!(maxima, maximum)
                 s = -1; m = yₖ
@@ -143,16 +168,19 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
               xₗ = table[l][1]; yₗ = table[l][2]
               if yₗ > mₑ
                 # -----------
-                if Α ≠ nothing
+                if ℷ
                   result = Optim.optimize(τ, xₗ, xₖ, Optim.Brent())
                   xₘᵢₙ = Optim.minimizer(result)
+                  τₘᵢₙ = Optim.minimum(result)
                   if Α.sign > 0
-                    push!(Α.pits, (xₘᵢₙ, τ(xₘᵢₙ)))
+                    push!(Α.pits, (xₘᵢₙ, τₘᵢₙ))
                   else
-                    push!(Α.peaks, (xₘᵢₙ, τ(xₘᵢₙ)))
+                    push!(Α.peaks, (xₘᵢₙ, τₘᵢₙ))
                   end
+                  info("𝔐inimum of ⟨$i|∂/∂R|$j⟩ found: Rₘᵢₙ=$(format("{:.5f}", xₘᵢₙ)); τ(Rₘᵢₙ)=$(format("{:.6e}", τₘᵢₙ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))")
                 end
                 # -----------
+                #info("ALG: Found function minimum in an area; τ(xₘᵢₙ)≈$(M - ϵₚₑₐₖ); xₗ=$xₗ; xₖ=$xₖ")
                 #minimum = (xₗ, xₖ, m - ϵₚₑₐₖ)
                 #push!(minima, minimum)
                 yₖ₁ = table[k-1][2]
@@ -171,6 +199,8 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
         for darea in dirty_areas
           if size(darea.peaks, 1) == 1 && size(darea.pits, 1) == 0
             dpeak = first(darea.peaks)
+            R₀ = dpeak[1]; τₚₑₐₖ = dpeak[2]
+            χₚₑₐₖ = abs(τₚₑₐₖ) > abs(yₛₘₐₗₗ) ? abs(abs(τₚₑₐₖ) - abs(yₛₘₐₗₗ)) : abs(τₚₑₐₖ)
 
             new_area = SinglePeakNonadiabaticArea()
             new_area.states = darea.states
@@ -179,10 +209,16 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
             new_area.coordinate_from = darea.coordinate_from
             new_area.coordinate_to = darea.coordinate_to
             new_area.sign = darea.sign
+            new_area.coordinate_potentials = 0.0
+            if χₚₑₐₖ <= ϵ_yₛₘₐₗₗ
+              warn("Skipping low peak (χₚₑₐₖ=$χₚₑₐₖ ≤ ϵ(⟨|∂/∂R|⟩ₛₘₐₗₗ)=$ϵ_yₛₘₐₗₗ): $(new_area)")
+              continue
+            end
             push!(areas[i, j], new_area)
           end
         end
       end
+      info("⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧")
     else
       # undef reference
     end
@@ -190,9 +226,29 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, nonadiabatic_conf
 
   for i = 1:N, j = 1:N
     if i > j && i - j == 1
-      areas[i, j] = areas[j, i]
+      if (!isdefined(areas[j, i]) || isempty(areas[j, i])) continue end
+      K = length(areas[j, i])
+      conjugate_areas = Vector{NonadiabaticArea}(0)
+      setindex!(areas, i, j, conjugate_areas)
+      for k = 1:K
+        push!(conjugate_areas, -(areas[j, i][k]))
+      end
+      areas[i, j] = conjugate_areas
     end
   end
+
+  info()
+  info("▫▫▫▫▫▫▫▫▫▫▫ Single Peak Areas Summary ▫▫▫▫▫▫▫▫▫▫▫")
+  for i = 1:N, j=1:N
+    if i < j && j - i == 1
+      info("*********** Areas of ⟨$i|∂/∂R|$j⟩ ***********")
+      for Aᵛ in areas[i, j]
+        info(Aᵛ)
+      end
+      info("*******************************************")
+    end
+  end
+  info("▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫")
 
   return areas
 end

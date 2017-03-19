@@ -110,7 +110,8 @@ function loadConfiguration(filePath::AbstractString)
 
   Hₐ_data = loadRawData(input_paths.file_hamiltonian_adiabatic)
   fixPotentialAsymptotics!(Hₐ_data, loadUtilitySettings(js["settings"]["utility"]))
-  input_data = InputData(Hₐ_data, loadRawData(input_paths.file_coupling_∂_∂R_adiabatic), Nullable{DataFrame}())
+  ∂_∂Rᴬ_data = loadRawData(input_paths.file_coupling_∂_∂R_adiabatic)
+  input_data = InputData(Hₐ_data, ∂_∂Rᴬ_data, Nullable{DataFrame}())
 
   output_paths = OutputPaths(js["output-data"]["hamiltonian-diabatic"], js["output-data"]["coupling-∂_∂R-diabatic"], js["output-data"]["transformation-matrix"])
 
@@ -188,16 +189,16 @@ end
 
 function loadNonadiabaticAreas(js, p_coordinate_start, p_coordinate_step, p_coordinate_piece, p_coordinate_step_error)
   if (!haskey(js, "coordinate-start") && p_coordinate_start == -1) || (js["coordinate-start"] < 0 && p_coordinate_start == -1)
-    throw(DomainError("Please define the setting 'coordinate-start' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
+    throw(ErrorException("Please define the setting 'coordinate-start' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
   end
   if (!haskey(js, "coordinate-step") && p_coordinate_step == -1)  || (js["coordinate-step"] < 0 && p_coordinate_step == -1)
-    throw(DomainError("Please define the setting 'coordinate-step' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
+    throw(ErrorException("Please define the setting 'coordinate-step' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
   end
   if (!haskey(js, "coordinate-piece") && p_coordinate_step == -1)  || (js["coordinate-piece"] < 0 && p_coordinate_step == -1)
-    throw(DomainError("Please define the setting 'coordinate-piece' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
+    throw(ErrorException("Please define the setting 'coordinate-piece' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
   end
   if (!haskey(js, "coordinate-step-error") && p_coordinate_step_error == -1)  || (js["coordinate-step-error"] < 0 && p_coordinate_step_error == -1)
-    throw(DomainError("Please define the setting 'coordinate-step-error' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
+    throw(ErrorException("Please define the setting 'coordinate-step-error' in the global 'settings' section or in the 'nonadiabatic-areas' child configuration element using a small positive number."))
   end
 
   coordinate_start = deriveCoordinateParameter(js, "coordinate-start", p_coordinate_start)
@@ -205,13 +206,13 @@ function loadNonadiabaticAreas(js, p_coordinate_start, p_coordinate_step, p_coor
   coordinate_piece = deriveCoordinateParameter(js, "coordinate-piece", p_coordinate_piece)
   coordinate_step_error = deriveCoordinateParameter(js, "coordinate-step-error", p_coordinate_step_error)
   if coordinate_step < 1e-9
-    throw(DomainError("The configured step by coordinate ΔR=$coordinate_step is too small or negative."))
+    throw(ErrorException("The configured step by coordinate ΔR=$coordinate_step is too small or negative."))
   end
   if coordinate_piece <= coordinate_step
-    throw(DomainError("The configured coordidate piece $coordinate_piece is less than ΔR=$coordinate_step."))
+    throw(ErrorException("The configured coordidate piece $coordinate_piece is less than ΔR=$coordinate_step."))
   end
   if coordinate_step_error < 1e-12
-    throw(DomainError("The configured step error by coordinate ΔR=$coordinate_step_error is too small or negative."))
+    throw(ErrorException("The configured step error by coordinate ΔR=$coordinate_step_error is too small or negative."))
   end
 
   js_areas = js["areas"]
@@ -219,7 +220,7 @@ function loadNonadiabaticAreas(js, p_coordinate_start, p_coordinate_step, p_coor
   for area in js_areas
     areaType = get(MAPPING_NonadiabaticAreaTypes, area.first, UNSUPPORTED::NonadiabaticAreaTypes)
     if areaType == UNSUPPORTED::NonadiabaticAreaTypes
-      throw(DomainError("Unsupported non-adiabatic area type '$(area.first)'"))
+      throw(ErrorException("Unsupported non-adiabatic area type '$(area.first)'"))
     end
     if areaType == SINGLE_PEAK::NonadiabaticAreaTypes
       areaSettings = buildSinglePeakNonadiabaticArea(area.second)

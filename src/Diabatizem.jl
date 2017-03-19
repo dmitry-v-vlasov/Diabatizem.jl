@@ -2,8 +2,11 @@ module Diabatizem
 
 using JSON
 using DataFrames
+using Logging
 
 export Configuration
+export NonadiabaticArea, SinglePeakNonadiabaticArea
+
 export loadConfiguration
 export buildData
 
@@ -12,6 +15,7 @@ export detectLandauZenerAreas
 export fitLandauZenerCouplings
 export deriveLandauZenerCouplingFunctions
 
+export dataColumnOfSymetricMatrix, dataSizeOfSymetricMatrix
 export transformationMatrix, error_S
 export diabatize
 

@@ -34,6 +34,10 @@ function buildHₐ!(table_Hₐ::DataFrame, data::Data, interpolationType::Interp
         setindex!(data.Hₐ, R -> itp[R], i, j)
         setindex!(data.itp_Hₐ, itp, i, j)
       else
+        if i == N
+          println(Y)
+          println("***********")
+        end
         itp = interpolate(Y, interpolationObject, OnGrid())
         setindex!(data.Hₐ, R -> itp[R/ΔR + 1], i, j)
         setindex!(data.itp_Hₐ, itp, i, j)

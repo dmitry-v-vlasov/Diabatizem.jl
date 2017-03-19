@@ -1,8 +1,70 @@
-using Interpolations
+using Calculus
+using Logging
+using ProgressMeter
+
+
+#const tanˡⁱᵐ = 57.28996163075943 # tan(89°)
+const tanˡⁱᵐ = 5.671281819617709 # tan(80°)
+
+# ---------------------------------
+# Miscellaneous Types
+# ---------------------------------
+immutable IteratorRow{T<:AbstractMatrix}
+  A::T
+end
+Base.start(::IteratorRow)  = 1
+Base.next(it::IteratorRow, i) = (it.A[i, :], i+1)
+Base.done(it::IteratorRow, i) = i > size(it.A, 1)
 
 # ---------------------------------
 # Miscellaneous utility functions
 # ---------------------------------
+function filterMatrixRows(M::Array{Float64, 2}, predicate::Function)
+  Vᵐ = Vector{Vector{Float64}}()
+  for row in IteratorRow(M)
+    if predicate(row)
+      push!(Vᵐ, row)
+    end
+  end
+  L = size(Vᵐ, 1); N = size(Vᵐ[1], 1)
+  Mᵐ = Array{Float64, 2}(L, N)
+  for l = 1:L
+    Mᵐ[l, :] = Vᵐ[l]
+  end
+  return Mᵐ
+end
+
+function highDerivative(f::Function, x::Float64, Δx::Float64)
+  return abs((f(x + Δx) - f(x - Δx)) / (2 * Δx)) > tanˡⁱᵐ
+end
+
+function dirtyDerivative(f::Function, x::Float64, Δx::Float64)
+  return (f(x + Δx) - f(x - Δx)) / (2 * Δx)
+end
+
+function limderivative(f::Function, x::Float64, Δx::Float64)
+  fd = (f(x + Δx) - f(x - Δx)) / (2 * Δx)
+  return abs(fd) <= tanˡⁱᵐ ?  sderivative(f, x) : sign(fd) * tanˡⁱᵐ
+end
+
+function sderivative(f::Function, x::Float64)
+  return try
+    derivative(f, x)
+  catch e
+    err("Unable to calculate df/dx on function object $f at the point $x")
+    throw(e)
+  end
+end
+
+function ssecond_derivative(f::Function, x::Float64)
+  return try
+    second_derivative(f, x)
+  catch e
+    err("Unable to calculate df/dx on function object $f at the point $x")
+    throw(e)
+  end
+end
+
 """
   Calculates a column number in a data file for a given
   symmetric or antisymmetric (square) matrix with ZEROs in the main diagonal by
@@ -196,4 +258,22 @@ end
 function int2molstate(i::Int)
   @assert 1 <= i <= length(⚛⚛_STATES) "The condition '1 ≤ $i ≤ $(length(⚛⚛_STATES))' is false."
   return ⚛⚛_STATES[i]
+end
+
+function progressCreate(msg::AbstractString, color::Symbol)
+  #return Progress(100, 0.05, msg, ProgressMeter.tty_width(bar), color; barglyphs=BarGlyphs(bar))
+  return Progress(100, 0.05, msg, ProgressMeter.tty_width(msg), color)
+end
+
+function progressCreate(limit::Int, msg::AbstractString, color::Symbol)
+  #return Progress(100, 0.05, msg, ProgressMeter.tty_width(bar), color; barglyphs=BarGlyphs(bar))
+  return Progress(limit, 0.05, msg, ProgressMeter.tty_width(msg), color)
+end
+
+function progress!(p::Progress, counter::Int, showvalues::Any)
+  ProgressMeter.update!(p, counter; showvalues = showvalues)
+end
+
+function progress!(p::Progress, counter::Int)
+  ProgressMeter.update!(p, counter)
 end
