@@ -42,7 +42,7 @@
     },
     "diabatization": {
       "coordinate-start": 100.1,
-      "coordinate-step": 0.01,
+      "coordinate-step": {"min": 0.01, "max": 0.01},
       "coordinate-stop": 0.1
     },
     "utility": {

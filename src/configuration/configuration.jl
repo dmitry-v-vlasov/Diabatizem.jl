@@ -79,7 +79,7 @@ end
 
 type DiabatizationSettings
   coordinate_start::Float64
-  coordinate_step::Float64
+  coordinate_step::Tuple{Float64, Float64}
   coordinate_stop::Float64
 end
 
@@ -180,9 +180,12 @@ function loadUtilitySettings(js)
 end
 
 function loadDiabatizationSettings(js)
+  step_min = abs(js["coordinate-step"]["min"])
+  step_max = abs(js["coordinate-step"]["max"])
+  @assert step_min <= step_max
   return DiabatizationSettings(
     js["coordinate-start"],
-    js["coordinate-step"],
+    (step_min, step_max),
     js["coordinate-stop"]
   )
 end

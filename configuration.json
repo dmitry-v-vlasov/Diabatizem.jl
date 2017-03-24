@@ -41,9 +41,9 @@
       }
     },
     "diabatization": {
-      "coordinate-start": 100.1,
-      "coordinate-step": 0.00001,
-      "coordinate-stop": 0.1
+      "coordinate-start": 50.0,
+      "coordinate-step": {"min": 1e-6, "max": 1e-2},
+      "coordinate-stop": 20.0
     },
     "utility": {
       "channel-ionic-number": -1,

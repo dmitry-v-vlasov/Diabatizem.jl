@@ -1,5 +1,6 @@
 using Diabatizem
 
+#C = loadConfiguration("configuration-NaH.json")
 C = loadConfiguration("configuration.json")
 D = buildData(C.input_data.hamiltonian_adiabatic, C.input_data.coupling_∂_∂R_adiabatic, C.settings.interpolation)
 
@@ -13,6 +14,7 @@ Aˡᶻᶠ = fitLandauZenerCouplings(Aˡᶻ)
 ∂_∂Rᵐᵒᵈᵉˡ = deriveLandauZenerCouplingFunctions(Aˡᶻᶠ)
 Rᵈᵃᵗᵃ = ∂_∂Rᵈᵃᵗᵃ[:, 1]
 
+#Rᵖᵒⁱⁿᵗˢ = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, C.settings.diabatization)
 (Rᵖᵒⁱⁿᵗˢ,
   S, Sᵈᵃᵗᵃ) = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, C.settings.diabatization)
 (ϵ_S, ϵ_Sᵈᵃᵗᵃ) = error_S(S)

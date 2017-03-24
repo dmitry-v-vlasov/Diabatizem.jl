@@ -233,6 +233,43 @@ function Δhₒₚₜʰ(ΔRₛₜ, df_dx, f)
   return Δh₀ < ΔRₛₜ ? Δh₀ : ΔRₛₜ
 end
 
+function splitx(x₀::Float64, x::Float64, f::Function, m₀::Float64, M₀::Float64, Δxₘᵢₙ::Float64, Δxₘₐₓ::Float64)
+  n = splitn(x₀, x, f, m₀, M₀, Δxₘᵢₙ, Δxₘₐₓ)
+  return collect(x₀:((x - x₀) / n):x)
+end
+
+function splitxn(x₀::Float64, x::Float64, n::Int)
+  return collect(x₀:((x - x₀) / n):x)
+end
+
+function splitn(x₀::Float64, x::Float64, f::Function, m₀::Float64, M₀::Float64, Δxₘᵢₙ::Float64, Δxₘₐₓ::Float64)
+  fₓ₀ = f(x₀); fₓ = f(x)
+  fₘᵢₙ = min(abs(fₓ₀), abs(fₓ))
+  fₘₐₓ = max(abs(fₓ₀), abs(fₓ))
+
+  fʳᵉᶠ = fₘₐₓ
+  δf = abs(fₓ - fₓ₀)
+  if δf < m₀ || fʳᵉᶠ < m₀
+    return abs(x - x₀) > Δxₘₐₓ ?
+      ceil(Int, abs(x - x₀)/abs(Δxₘₐₓ)):
+      (abs(x - x₀) > Δxₘᵢₙ ?
+        ceil(Int, abs(x - x₀)/abs(Δxₘᵢₙ)) :
+        1
+      )
+  end
+
+  δfᵣₑₗ = δf / fʳᵉᶠ
+  return (1 - δfᵣₑₗ > 1e-2) ?
+    ceil(Int, 1 / (1 - δfᵣₑₗ)) :
+    (abs(x - x₀) > Δxₘₐₓ ?
+      ceil(Int, abs(x - x₀)/abs(Δxₘₐₓ)) :
+      (abs(x - x₀) > Δxₘᵢₙ ?
+        ceil(Int, abs(x - x₀)/abs(Δxₘᵢₙ)) :
+        1
+      )
+    )
+end
+
 const INT_SUBSCRIPT = Dict{Int, Char}(
   0 => '₀',
   1 => '₁',
@@ -276,4 +313,8 @@ end
 
 function progress!(p::Progress, counter::Int)
   ProgressMeter.update!(p, counter)
+end
+
+function finish!(p::Progress)
+  ProgressMeter.finish!(p)
 end

@@ -1,6 +1,7 @@
 using Calculus
 using Sundials
 using Logging
+using ProgressMeter
 
 function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, Sˡ::Vector{Array{Float64, 2}})
   Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
@@ -22,53 +23,48 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖ�
   return Rᵖᵒⁱⁿᵗˢ, Hᵈ, ∂_∂Rᵈ
 end
 
-function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, Rᵈᵃᵗᵃ::Vector{Float64}, config::DiabatizationSettings)
+function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, Rᵛ::Vector{Float64}, C::DiabatizationSettings)
   Logging.configure(level=INFO)
 
-  Rᵇᵉᵍⁱⁿ = config.coordinate_start; Rᵉⁿᵈ = config.coordinate_stop
-  sign_ΔR = sign(Rᵉⁿᵈ - Rᵇᵉᵍⁱⁿ)
-  ΔRᵐᵃˣ = config.coordinate_step
-
-  N = size(Hₐ, 1); Nᶜ = dataColumnOfSymetricMatrix(N-1, N, N)
-  Rᵖᵒⁱⁿᵗˢ = Vector{Float64}(); S₀ = eye(N, N)
-
-  ΔR_∂_∂R(i::Int, j::Int, R::Float64) = Δhₒₚₜʰ(ΔRᵐᵃˣ, derivative(∂_∂R[i, j], R), ∂_∂R[i, j](R))
-  ΔRᵐⁱⁿ(R::Float64, ΔRᵗᵉᵐᵖ::Vector{Float64}) = begin
+  # -----------
+  N = size(Hₐ, 1)
+  ℲR⃛ᵒᵖᵗ=(R₀::Float64, R::Float64, m₀, M₀, ΔRₘᵢₙ, ΔRₘₐₓ)->begin
+    n = 1
     for i = 1:N, j = 1:N
-      if i < j
-        l = dataColumnOfSymetricMatrix(i, j, N)
-        ΔRᵗᵉᵐᵖ[l] = ΔR_∂_∂R(i, j, R)
+      if i < j && j - i == 1
+        n = max(splitn(R₀, R, ∂_∂R[i, j], m₀, M₀, ΔRₘᵢₙ, ΔRₘₐₓ), n)
       end
     end
-    return minimum(ΔRᵗᵉᵐᵖ)
+    return splitxn(R₀, R, n)
   end
+  # -----------
 
-  ΔRᵗᵐᵖ = Vector{Float64}(Nᶜ)
-  Lᵈᵃᵗᵃ = size(Rᵈᵃᵗᵃ, 1)
-  if sign_ΔR > 0
-    lᵇᵉᵍⁱⁿ = findfirst(Rᵢ -> Rᵢ >= Rᵇᵉᵍⁱⁿ, Rᵈᵃᵗᵃ); lᵇᵉᵍⁱⁿ = lᵇᵉᵍⁱⁿ == 0 ? 1 : lᵇᵉᵍⁱⁿ
-    lᵉⁿᵈ = findfirst(Rᵢ -> Rᵢ >= Rᵉⁿᵈ, Rᵈᵃᵗᵃ); lᵉⁿᵈ = lᵉⁿᵈ == 0 ? Lᵈᵃᵗᵃ : lᵉⁿᵈ
-    for l = lᵇᵉᵍⁱⁿ:(lᵉⁿᵈ - 1)
-      Rₗᵃ = Rᵈᵃᵗᵃ[l]; Rₗᵇ = Rᵈᵃᵗᵃ[l + 1]
-      R = Rₗᵃ
-      while R <= Rₗᵇ
-        push!(Rᵖᵒⁱⁿᵗˢ, R); R += ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
-      end
-    end
-  else
-    Rᵈᵃᵗᵃᵢₙᵥ = reverse(Rᵈᵃᵗᵃ)
-    lᵇᵉᵍⁱⁿ = findfirst(Rᵢ -> Rᵢ <= Rᵇᵉᵍⁱⁿ, Rᵈᵃᵗᵃᵢₙᵥ); lᵇᵉᵍⁱⁿ = lᵇᵉᵍⁱⁿ == 0 ? 1 : lᵇᵉᵍⁱⁿ
-    lᵉⁿᵈ = findfirst(Rᵢ -> Rᵢ <= Rᵉⁿᵈ, Rᵈᵃᵗᵃᵢₙᵥ); lᵉⁿᵈ = lᵉⁿᵈ == 0 ? Lᵈᵃᵗᵃ : lᵉⁿᵈ
-    info("LL : $lᵇᵉᵍⁱⁿ , $lᵉⁿᵈ, $Lᵈᵃᵗᵃ")
-    for l = lᵇᵉᵍⁱⁿ:(lᵉⁿᵈ - 1)
-      Rₗᵃ = Rᵈᵃᵗᵃᵢₙᵥ[l]; Rₗᵇ = Rᵈᵃᵗᵃᵢₙᵥ[l + 1]
-      R = Rₗᵃ
-      while R >= Rₗᵇ
-        push!(Rᵖᵒⁱⁿᵗˢ, R); R -= ΔRᵐⁱⁿ(R, ΔRᵗᵐᵖ)
-      end
+  Rˢᵗᵃʳᵗ = C.coordinate_start
+  Rˢᵗᵒᵖ = C.coordinate_stop
+  σR = sign(Rˢᵗᵒᵖ - Rˢᵗᵃʳᵗ)
+  ΔRₘᵢₙ = σR * min(abs(C.coordinate_step[1]), abs(C.coordinate_step[2]))
+  ΔRₘₐₓ = σR * max(abs(C.coordinate_step[1]), abs(C.coordinate_step[2]))
+
+  # -----------
+  progress = progressCreate(100, "Making R grid: ", :yellow); progressᶜ = 0
+  Rᵖᵒⁱⁿᵗˢ = Vector{Float64}()
+  Rₘᵢₙ = min(Rˢᵗᵃʳᵗ, Rˢᵗᵒᵖ); Rₘₐₓ = max(Rˢᵗᵃʳᵗ, Rˢᵗᵒᵖ)
+  R⃜ = filter(R -> Rₘᵢₙ<=R<=Rₘₐₓ, σR > 0 ? Rᵛ : reverse(unique(Rᵛ))); L = length(R⃜)
+  for l = 1:L-1
+    Rˡ = R⃜[l]; Rˡ⁺¹ = R⃜[l + 1]
+    R⃛ˡ = ℲR⃛ᵒᵖᵗ(Rˡ, Rˡ⁺¹, 2e-2, 1.2e4, ΔRₘᵢₙ, ΔRₘₐₓ)
+    for k = 1:length(R⃛ˡ) - 1
+      Rˡₖ = R⃛ˡ[k]
+      push!(Rᵖᵒⁱⁿᵗˢ, Rˡₖ)
+      progressᶜ = floor(Int, (1 - floor(abs(Rˡₖ - Rˢᵗᵒᵖ)/Rₘₐₓ)) * 100)
+      progress!(progress, progressᶜ, [(:R, Rˡₖ), (:ΔR, abs(Rˡₖ - R⃛ˡ[k + 1]))])
     end
   end
+  push!(Rᵖᵒⁱⁿᵗˢ, R⃜[L])
+  finish!(progress)
+  # -----------
 
+  S₀ = eye(N, N)
   S, Sᵈᵃᵗᵃ = problemCauchy(
     Rᵖᵒⁱⁿᵗˢ, S₀;
     prod_function = diabatizationODE_function,
