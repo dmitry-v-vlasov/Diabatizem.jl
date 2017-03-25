@@ -21,4 +21,5 @@ Rᵈᵃᵗᵃ = ∂_∂Rᵈᵃᵗᵃ[:, 1]
 (Rᵖᵒⁱⁿᵗˢ,
   Hᴰ, ∂_∂Rᴰ) = diabatize(Hᴬ, ∂_∂Rᴬ, Rᵖᵒⁱⁿᵗˢ, S)
 Uᴰᵈᵃᵗᵃ = matl2matldiag(Hᴰ)
+Hᴰᵈᵃᵗᵃ = matl2matlupperx(Hᴰ)
 ∂_∂Rᴰᵈᵃᵗᵃ = matl2matlupperx(∂_∂Rᴰ)

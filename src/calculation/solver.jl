@@ -15,8 +15,8 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖ�
     ∇S = derivative.(Sᶠᵘⁿᶜ, R)
     Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R)
 
-    Hᴰ = S⁻¹*Hᴬ*S
-    ∂_∂Rᴰ = S⁻¹*∂_∂Rᴬ*S + S⁻¹*∇S
+    Hᴰ = S'*Hᴬ*S
+    ∂_∂Rᴰ = S'*∂_∂Rᴬ*S + S'*∇S
 
     Hᵈ[i] = Hᴰ; ∂_∂Rᵈ[i] = ∂_∂Rᴰ
   end
