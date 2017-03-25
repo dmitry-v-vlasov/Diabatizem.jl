@@ -42,6 +42,7 @@ plot!(pl, X, ∂_∂Rᴬ[3,4], label = "⟨B|∂/∂R|C⟩, Quantum-chemical dat
 
 ## Non-adiabatic Coupling Diabatization
 ![Comparison of an Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling Before and After Diabatization](doc/ddrBC_NaH_diabatized.png?raw=true "Comparison of an Accurate (Q. Chem.) NaH ⟨B|∂/∂R|C⟩ Coupling Before and After Diabatization")
+![Comparison of an Accurate (Q. Chem.) CaH ⟨8|∂/∂R|9⟩ Coupling Before and After Diabatization](doc/Accurate_(Q.Chem.)_CaH_⟨8|∂_∂R|9⟩_Diabatization.png?raw=true "Comparison of an Accurate (Q. Chem.) CaH ⟨8|∂/∂R|9⟩ Coupling Before and After Diabatization")
 ```Julia
 using Plots
 
