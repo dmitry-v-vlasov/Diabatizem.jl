@@ -13,4 +13,5 @@ pl = plot(title="\"Accurate\" (Q. Chem.) CaH ⟨8|∂/∂R|9⟩ Diabatization",
   ylabel = "⟨B|∂/∂R|C⟩, a.u.", yticks=y_ticks,
   size=(1440, 900));
 plot!(pl, Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ[:, 50], label = "⟨8|∂/∂R|9⟩, diabatized`");
+plot!(pl, X, ∂_∂Rᵐᵒᵈᵉˡ[8, 9], label = "⟨8|∂/∂R|9⟩, Landau-Zener model")
 plot!(pl, X, ∂_∂Rᴬ[8, 9], label = "⟨8|∂/∂R|9⟩, original")
