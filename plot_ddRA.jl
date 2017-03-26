@@ -10,8 +10,11 @@ y_ticks=Vector{Int}(); append!(y_ticks, -500:500:12500)
 x_ticks=Vector{Float64}(); append!(x_ticks, 29.633:0.0001:29.635)
 pl = plot(title="\"Accurate\" (Q. Chem.) CaH ⟨8|∂/∂R|9⟩ Diabatization",
   xscale = :identity, xlims=(29.633, 29.635), xticks=x_ticks, xlabel = "R, Bohr",
+  xtickfont = font(11, "DejaVu Sans Mono"),
   ylabel = "⟨B|∂/∂R|C⟩, a.u.", yticks=y_ticks, ylims=(-500,12500),
+  ytickfont = font(11, "DejaVu Sans Mono"),
+  legendfont=font(12, "DejaVu Sans Mono"),
   size=(1440, 900));
-plot!(pl, Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ[:, 50], label = "⟨8|∂/∂R|9⟩, diabatized`");
+plot!(pl, Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ[:, 50], label = "⟨8|∂/∂R|9⟩, \"diabatized\" (hybrid representation)");
 plot!(pl, X, ∂_∂Rᵐᵒᵈᵉˡ[8, 9], label = "⟨8|∂/∂R|9⟩, Landau-Zener model")
-plot!(pl, X, ∂_∂Rᴬ[8, 9], label = "⟨8|∂/∂R|9⟩, original")
+plot!(pl, X, ∂_∂Rᴬ[8, 9], label = "⟨8|∂/∂R|9⟩, original Q. Chem data")
