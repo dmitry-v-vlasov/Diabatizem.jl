@@ -10,6 +10,7 @@ Nˡ = size(Sᵈᵃᵗᵃ, 2)
 N = convert(Int, √(Nˡ))
 for l = 1:Nˡ
   i, j = mpos(l, N)
+  println("Err: plotting $i, $j")
   plot!(pl, Rᵖᵒⁱⁿᵗˢ, ϵ_Sᵈᵃᵗᵃ[:, l], label="(Sᵀ⋅S)$(int2indexsub(i))$(int2indexsub(j))");
 end
 pl
