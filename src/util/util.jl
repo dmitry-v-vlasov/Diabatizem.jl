@@ -179,8 +179,8 @@ function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Array{Float64, 2}})
   for k = 1:N*N
     Y = Mᵈᵃᵗᵃ[:, k]
     i, j = mpos(k, N)
-    itp = interpolate((X,), Y, Gridded(Linear()))
-    Mᶠ[i, j] = R -> itp[R]
+    spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=3, bc="extrapolate", s=0.0)
+    Mᶠ[i, j] = R -> Dierckx.evaluate(spl, R)
   end
   return Mᶠ
 end
