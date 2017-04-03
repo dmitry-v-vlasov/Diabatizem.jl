@@ -5,12 +5,9 @@
     "coupling_∂_∂R_adiabatic_model": "ddr-CaH.dsv"
   },
   "output-data": {
-    "potentials-diabatic": "output-potentials-diabatic.dsv",
-    "hamiltonian-diabatic": "output-hamiltonian-diabatic.dsv",
-    "coupling-∂_∂R-diabatic": "output-ddr-diabatic.dsv",
-    "coupling-∂²_∂R²-diabatic": "output-d2dr2-diabatic.dsv",
-    "coupling-∂²_∂R²-diabatic-diagonal": "output-d2dr2-diabatic-diagonal.dsv",
-    "transformation-matrix": "output-transformation-matrix.dsv"
+    "hamiltonian-diabatic": "potentials-diabatic.dsv",
+    "coupling-∂_∂R-diabatic": "ddr-diabatic.dsv",
+    "transformation-matrix": "transformation-matrix.dsv"
   },
   "settings": {
     "strategy": "Landau-Zener-with-external-model-data",

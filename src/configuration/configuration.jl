@@ -15,11 +15,8 @@ type InputData
 end
 
 type OutputPaths
-  file_potentials_diabatic::AbstractString
   file_hamiltonian_diabatic::AbstractString
   file_coupling_∂_∂R_diabatic::AbstractString
-  file_coupling_∂²_∂R²_diabatic::AbstractString
-  file_coupling_∂²_∂R²_diabatic_diag::AbstractString
   file_transformation_matrix::AbstractString
 end
 
@@ -116,13 +113,7 @@ function loadConfiguration(filePath::AbstractString)
   ∂_∂Rᴬ_data = loadRawData(input_paths.file_coupling_∂_∂R_adiabatic)
   input_data = InputData(Hₐ_data, ∂_∂Rᴬ_data, Nullable{DataFrame}())
 
-  output_paths = OutputPaths(
-    js["output-data"]["potentials-diabatic"],
-    js["output-data"]["hamiltonian-diabatic"],
-    js["output-data"]["coupling-∂_∂R-diabatic"],
-    js["output-data"]["coupling-∂²_∂R²-diabatic"],
-    js["output-data"]["coupling-∂²_∂R²-diabatic-diagonal"],
-    js["output-data"]["transformation-matrix"])
+  output_paths = OutputPaths(js["output-data"]["hamiltonian-diabatic"], js["output-data"]["coupling-∂_∂R-diabatic"], js["output-data"]["transformation-matrix"])
 
   settings = loadCalculationSettings(js, input_paths, input_data)
 
@@ -329,6 +320,6 @@ function loadRawData(filePath::AbstractString)
     filePath,
     header = true, separator = ' ',
     allowcomments = true, commentmark = '#',
-    skipblanks = true, encoding = :utf8, normalizenames = false
+    skipblanks = true, encoding = :utf8, normalizenames = true
   )
 end

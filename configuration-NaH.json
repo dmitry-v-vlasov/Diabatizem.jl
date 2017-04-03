@@ -5,8 +5,7 @@
     "coupling_∂_∂R_adiabatic_model": "ddr-pspot.dsv"
   },
   "output-data": {
-    "potentials-diabatic": "potentials-diabatic.dsv",
-    "hamiltonian-diabatic": "hamiltonian-diabatic.dsv",
+    "hamiltonian-diabatic": "potentials-diabatic.dsv",
     "coupling-∂_∂R-diabatic": "ddr-diabatic.dsv",
     "transformation-matrix": "transformation-matrix.dsv"
   },

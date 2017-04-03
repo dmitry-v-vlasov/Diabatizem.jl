@@ -3,19 +3,16 @@ using Sundials
 using Logging
 using ProgressMeter
 
-import Dierckx
-
 function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, Sˡ::Vector{Array{Float64, 2}})
   Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
   Hᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
   ∂_∂Rᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
-  Sᶠᵘⁿᶜ, S_spline = matl2matfsl(Rᵖᵒⁱⁿᵗˢ, Sˡ)
+  Sᶠᵘⁿᶜ = matl2matfsl(Rᵖᵒⁱⁿᵗˢ, Sˡ)
   for i = 1:Nᵖᵒⁱⁿᵗˢ
     R = Rᵖᵒⁱⁿᵗˢ[i];
     S = Sˡ[i];
     S⁻¹ = S';
-    #∇S = Dierckx.derivative.(S_spline, R; nu=1)
-    ∇S = matDerivative(R, S_spline)
+    ∇S = derivative.(Sᶠᵘⁿᶜ, R)
     Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R)
 
     Hᴰ = S⁻¹*Hᴬ*S
