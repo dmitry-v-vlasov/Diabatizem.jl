@@ -2,6 +2,7 @@ using Calculus
 using Logging
 using ProgressMeter
 
+import Dierckx
 
 #const tanˡⁱᵐ = 57.28996163075943 # tan(89°)
 const tanˡⁱᵐ = 5.671281819617709 # tan(80°)
@@ -145,6 +146,18 @@ function matl2matldiag(Mˡ::Vector{Array{Float64, 2}})
   return Mˡᵈⁱᵃᵍ
 end
 
+function matl2matupper(M::Array{Float64, 2})
+  @assert size(M, 1) == size(M, 2) "$(size(M, 1))≠$(size(M, 2))"
+  N = size(M, 1)
+  L = dataSizeOfSymetricMatrix(N)
+  ML = Vector{Float64}(L)
+  for i=1:N, j=i+1:N
+    l = dataColumnOfSymetricMatrix(i, j, N)
+    ML[l] = M[i, j]
+  end
+  return ML
+end
+
 function matl2matlupperx(Mˡ::Vector{Array{Float64, 2}})
   N = size(Mˡ[1], 1)
   L = size(Mˡ, 1); Nᴸ = dataSizeOfSymetricMatrix(N)
@@ -172,17 +185,42 @@ function matf2mat(x::Float64, Mᶠ::Array{Function, 2})
 end
 
 function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Array{Float64, 2}})
-  L = size(X, 1)
+  L = length(X)
   N = size(Mˡ[1], 1)
   Mᵈᵃᵗᵃ = matl2mdata(Mˡ)
   Mᶠ = Array{Function, 2}(N, N)
+  M_spline = Array{Dierckx.Spline1D, 2}(N, N)
   for k = 1:N*N
     Y = Mᵈᵃᵗᵃ[:, k]
     i, j = mpos(k, N)
-    spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=3, bc="extrapolate", s=0.0)
+    spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=1, bc="extrapolate", s=0.0)
     Mᶠ[i, j] = R -> Dierckx.evaluate(spl, R)
+    M_spline[i, j] = spl
   end
-  return Mᶠ
+  return Mᶠ, M_spline
+end
+
+function matd2vecfsl(X::Vector{Float64}, Mᵈᵃᵗᵃ::Array{Float64, 2})
+  L = length(X)
+  Nc = size(Mᵈᵃᵗᵃ, 2)
+  Mᶠ = Vector{Function}(Nc)
+  M_spline = Vector{Dierckx.Spline1D}(Nc)
+  for k = 1:Nc
+    Y = Mᵈᵃᵗᵃ[:, k]
+    spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=1, bc="extrapolate", s=0.0)
+    Mᶠ[k] = R -> Dierckx.evaluate(spl, R)
+    M_spline[k] = spl
+  end
+  return Mᶠ, M_spline
+end
+
+function matDerivative(X::Float64, splines::Array{Dierckx.Spline1D, 2})
+  N = size(splines, 1)
+  M = Array{Float64, 2}(N, N)
+  for i=1:N, j=1:N
+    M[i, j] = Dierckx.derivative(splines[i, j], X; nu=1)
+  end
+  return M
 end
 
 function matl2vec(Mˡ::Vector{Array{Float64, 2}}, i, j)

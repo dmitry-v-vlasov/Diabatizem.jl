@@ -6,14 +6,6 @@ using Formatting
 import Base.show
 import Base.-
 
-# ------------------------------------------------------------------
-type ParameterMatrix
-  distance::Float64
-  data::Array{Float64, 2}
-  function ParameterMatrix() new() end
-end
-# ------------------------------------------------------------------
-
 # ----------- calculation results -----------
 abstract Calculation
 
@@ -108,28 +100,6 @@ function show(io::IO, A::LandauZenerArea)
       '}'))
 end
 # ----------- non-adiabatic areas -----------
-
-# ----------- diabatic data -----------
-type DiabaticData
-  hamiltonian::Dict{Float64, ParameterMatrix}
-  ∂_∂R::Dict{Float64, ParameterMatrix}
-  function DiabaticData() new() end
-end
-
-type DiabaticDataOutput
-  hamiltonian::DataFrame
-  ∂_∂R::DataFrame
-  function DiabaticDataOutput() new() end
-end
-# ----------- diabatic data -----------
-
-# ----------- all calculation results -----------
-type GeneralCalculation <: Calculation
-  asymptotics::AsymptoticCalculation
-  nonadiabatic_areas::Array{NonadiabaticArea}
-  function GeneralCalculation() new() end
-end
-# ----------- all calculation results -----------
 
 # ----------- calculation results -----------
 # ------------------------------------------------------------------
