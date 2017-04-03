@@ -1,4 +1,5 @@
 using DataFrames
+using Calculus
 
 import Dierckx
 
@@ -8,6 +9,79 @@ type Data
   itp_Hₐ::Array{Dierckx.Spline1D, 2}
   itp_∂_∂R::Array{Dierckx.Spline1D, 2}
   function Data() new() end
+end
+
+function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
+    Uᴰᵈᵃᵗᵃ::Array{Float64, 2},
+    Hᴰᵈᵃᵗᵃ::Array{Float64, 2},
+    ∂_∂Rᴰᵈᵃᵗᵃ::Array{Float64, 2},
+    ∂²_∂R²ᴰᵈᵃᵗᵃ::Array{Float64, 2},
+    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Array{Float64, 2},
+    out::OutputPaths)
+  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Uᴰᵈᵃᵗᵃ, 1)
+  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Hᴰᵈᵃᵗᵃ, 1)
+  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂_∂Rᴰᵈᵃᵗᵃ, 1)
+  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 1)
+  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 1)
+
+  @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(Uᴰᵈᵃᵗᵃ, 2)*(size(Uᴰᵈᵃᵗᵃ, 2) - 1)/2
+  @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂_∂Rᴰᵈᵃᵗᵃ, 2)
+  @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 2)
+  @assert size(Uᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 2)
+
+  L = length(Rᵖᵒⁱⁿᵗˢ)
+  N = size(Uᴰᵈᵃᵗᵃ, 2)
+
+  # -----------
+  Hᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, Uᴰᵈᵃᵗᵃ, :diagonal, "H", N)
+  # -----------
+  Hᵒᶠᶠᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, Hᴰᵈᵃᵗᵃ, :symmetric, "H", N)
+  # -----------
+  ∂_∂R = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
+  # -----------
+  ∂²_∂R² = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂²_∂R²ᴰᵈᵃᵗᵃ, :symmetric, "d2/dR2", N)
+  # -----------
+  ∂²_∂R²ᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, :diagonal, "d2/dR2", N)
+  # -----------
+
+  # -----------
+  saveMatrixElementTable(Hᵈⁱᵃᵍ, out.file_potentials_diabatic)
+  saveMatrixElementTable(Hᵒᶠᶠᵈⁱᵃᵍ, out.file_hamiltonian_diabatic)
+  saveMatrixElementTable(∂_∂R, out.file_coupling_∂_∂R_diabatic)
+  saveMatrixElementTable(∂²_∂R², out.file_coupling_∂²_∂R²_diabatic)
+  saveMatrixElementTable(∂²_∂R²ᵈⁱᵃᵍ, out.file_coupling_∂²_∂R²_diabatic_diag)
+  # -----------
+end
+
+function saveMatrixElementTable(data::DataFrame, file_name::AbstractString)
+    writetable(file_name, data; separator=' ', quotemark=' ', header=true, nastring="EMPTY")
+end
+
+function makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, A::Array{Float64, 2}, dataType::Symbol, operator::AbstractString, N::Int)
+  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(A, 1)
+  data = DataFrame()
+  data[:R] = Rᵖᵒⁱⁿᵗˢ
+  Nᶜᵒˡ = size(A, 2)
+  if dataType == :diagonal
+    @assert Nᶜᵒˡ == N "$Nᶜᵒˡ≠$N"
+    for l = 1:Nᶜᵒˡ
+      state = ⚛⚛_STATES[l]
+      data[Symbol("<$state|$operator|$state>")] = A[:, l]
+    end
+  elseif (dataType == :symmetric || dataType == :antisymmetric)
+    @assert Nᶜᵒˡ == N*(N-1)/2 "$(Nᶜᵒˡ)≠$(N*(N-1)/2), N=$N"
+    lᵖ = 1
+    for i = 1:N, j=i+1:N
+      bra = ⚛⚛_STATES[i]; ket = ⚛⚛_STATES[j]
+      l = dataColumnOfSymetricMatrix(i, j, N)
+      @assert lᵖ <= l "$lᵖ>$l"; lᵖ = l;
+      @assert l <= Nᶜᵒˡ "$l>$Nᶜᵒˡ"
+      data[Symbol("<$bra|$operator|$ket>")] = A[:, l]
+    end
+  else
+    error("Unsupported data type.")
+  end
+  return data
 end
 
 function buildData(table_Hₐ::DataFrame, table_∂_∂R::DataFrame, interpolationSettings::InterpolationSettings)

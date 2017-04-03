@@ -8,7 +8,7 @@ export Configuration
 export NonadiabaticArea, SinglePeakNonadiabaticArea
 
 export loadConfiguration
-export buildData
+export buildData, saveData
 
 export detectSinglePeakAreas
 export detectLandauZenerAreas
@@ -18,8 +18,9 @@ export deriveLandauZenerCouplingFunctions
 export dataColumnOfSymetricMatrix, dataSizeOfSymetricMatrix
 export transformationMatrix, error_S
 export diabatize
+export calculate∂²_∂R²
 
-export matl2matldiag, matl2matlupperx, matl2mdata
+export matl2matldiag, matl2matlupperx, matl2mdata, matd2vecfsl
 export mpos, mvec
 export int2indexsub, int2molstate
 
@@ -31,5 +32,6 @@ include("calculation/types.jl")
 include("calculation/area.jl")
 include("calculation/fit.jl")
 include("calculation/solver.jl")
+include("calculation/extras.jl")
 
 end # module
