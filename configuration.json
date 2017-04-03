@@ -42,7 +42,7 @@
     },
     "diabatization": {
       "coordinate-start": 30.0,
-      "coordinate-step": {"min": 1e-7, "max": 1e-2},
+      "coordinate-step": {"min": 1e-6, "max": 1e-2},
       "coordinate-stop": 29.0
     },
     "utility": {
@@ -50,8 +50,8 @@
       "channel-lowest-number": 1
     },
     "interpolation": {
-      "hamiltonian": "spline-cubic",
-      "coupling-∂_∂R": "spline-cubic"
+      "hamiltonian": "spline-linear",
+      "coupling-∂_∂R": "spline-linear"
     }
   }
 }

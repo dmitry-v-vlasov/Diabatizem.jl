@@ -10,7 +10,6 @@ Nˡ = size(Sᵈᵃᵗᵃ, 2)
 N = convert(Int, √(Nˡ))
 for l = 1:Nˡ
   i, j = mpos(l, N)
-  println("plotting $i, $j")
   plot!(pl, Rᵖᵒⁱⁿᵗˢ, Sᵈᵃᵗᵃ[:, l], label="S$(int2indexsub(i))$(int2indexsub(j))");
 end
 pl
