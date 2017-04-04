@@ -5,7 +5,7 @@ using ProgressMeter
 
 import Dierckx
 
-function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, Sˡ::Vector{Array{Float64, 2}})
+function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, Sˡ::Vector{Array{Float64, 2}})
   Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
   Hᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
   ∂_∂Rᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
@@ -14,14 +14,14 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, Rᵖ�
     R = Rᵖᵒⁱⁿᵗˢ[i];
     S = Sˡ[i];
     S⁻¹ = S';
-    ∇S = Dierckx.derivative.(S_spline, R; nu=1)
+    #∇S = Dierckx.derivative.(S_spline, R; nu=1)
     #∇S = matDerivative(R, S_spline)
     #∇S = Calculus.derivative.(Sᶠᵘⁿᶜ, R) # Calculus, what the f***???!!
     #∇S = dirtyDerivative.(Sᶠᵘⁿᶜ, R, 1e-6)
-    Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R)
+    Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R); ∂_∂Rᴹ = matf2mat(R, ∂_∂Rᵐᵒᵈᵉˡ)
 
     Hᴰ = S⁻¹*Hᴬ*S
-    ∂_∂Rᴰ = S⁻¹*∂_∂Rᴬ*S + S⁻¹*∇S
+    ∂_∂Rᴰ = S⁻¹*(∂_∂Rᴬ - ∂_∂Rᴹ)*S
     #∂_∂Rᴰ = ∂_∂Rᴬ
 
     Hᵈ[i] = Hᴰ; ∂_∂Rᵈ[i] = ∂_∂Rᴰ

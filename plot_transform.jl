@@ -1,4 +1,5 @@
 using Plots
+using Calculus
 import Dierckx
 
 x_ticks=Vector{Int}(); append!(x_ticks, 1:9); append!(x_ticks, 10:5:100)
@@ -15,7 +16,7 @@ for l = 1:Nˡ
   i, j = mpos(l, N)
   if i in 8:9 && j in 8:9
     println("plotting $i, $j")
-    plot!(pl, Rᵖᵒⁱⁿᵗˢ, R -> Dierckx.derivative(Sspl[l], R), linestyle=(i == j) ? :dot : :solid, markershape=(i == j) ? :circle : :diamond,  label="S$(int2indexsub(i))$(int2indexsub(j))");
+    plot!(pl, Rᵖᵒⁱⁿᵗˢ, R -> Calculus.derivative(Sf[l], R), linestyle=(i == j) ? :dot : :solid, markershape=(i == j) ? :circle : :diamond,  label="S$(int2indexsub(i))$(int2indexsub(j))");
   end
 end
 pl

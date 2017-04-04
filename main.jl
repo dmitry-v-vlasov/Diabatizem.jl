@@ -18,7 +18,7 @@ Rᵈᵃᵗᵃ = ∂_∂Rᵈᵃᵗᵃ[:, 1];
   S, Sᵈᵃᵗᵃ) = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, C.settings.diabatization);
 (ϵ_S, ϵ_Sᵈᵃᵗᵃ) = error_S(S);
 (Rᵖᵒⁱⁿᵗˢ,
-  Hᴰ, ∂_∂Rᴰ) = diabatize(Hᴬ, ∂_∂Rᴬ, Rᵖᵒⁱⁿᵗˢ, S);
+  Hᴰ, ∂_∂Rᴰ) = diabatize(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵖᵒⁱⁿᵗˢ, S);
 Uᴰᵈᵃᵗᵃ = matl2matldiag(Hᴰ);
 Hᴰᵈᵃᵗᵃ = matl2matlupperx(Hᴰ);
 ∂_∂Rᴰᵈᵃᵗᵃ = matl2matlupperx(∂_∂Rᴰ);
