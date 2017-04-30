@@ -301,7 +301,7 @@ function splitn(x₀::Float64, x::Float64, f::Function, m₀::Float64, M₀::Flo
   #   println("High δf: δf=$δf, fₓ₀=$fₓ₀, fₓ=$fₓ; δfᵣₑₗ=$δfᵣₑₗ, n=$(ceil((δf > 1 ? log(δf) : 1)/(1 - δfᵣₑₗ))) at: x₀=$x₀; x=$x")
   # end
   return (1 - δfᵣₑₗ > 1e-2) ?
-    ceil(Int, (δf > 1 ? log(δf) : 1)/(1 - δfᵣₑₗ)) :
+    ceil(Int, (δf > 1 ? 10.0*log(δf) : 1)/(1 - δfᵣₑₗ)) :
     (abs(x - x₀) > Δxₘₐₓ ?
       ceil(Int, abs(x - x₀)/abs(Δxₘₐₓ)) :
       (abs(x - x₀) > Δxₘᵢₙ ?

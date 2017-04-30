@@ -12,6 +12,7 @@ type Data
 end
 
 function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
+    Sᵈᵃᵗᵃ::Array{Float64, 2},
     Uᴰᵈᵃᵗᵃ::Array{Float64, 2},
     Hᴰᵈᵃᵗᵃ::Array{Float64, 2},
     ∂_∂Rᴰᵈᵃᵗᵃ::Array{Float64, 2},
@@ -33,6 +34,8 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   N = size(Uᴰᵈᵃᵗᵃ, 2)
 
   # -----------
+  Sᵗᵃᵇˡᵉ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, Sᵈᵃᵗᵃ, :general, "C", N)
+  # -----------
   Hᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, Uᴰᵈᵃᵗᵃ, :diagonal, "H", N)
   # -----------
   Hᵒᶠᶠᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, Hᴰᵈᵃᵗᵃ, :symmetric, "H", N)
@@ -45,6 +48,7 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   # -----------
 
   # -----------
+  saveMatrixElementTable(Sᵗᵃᵇˡᵉ, out.file_transformation_matrix)
   saveMatrixElementTable(Hᵈⁱᵃᵍ, out.file_potentials_diabatic)
   saveMatrixElementTable(Hᵒᶠᶠᵈⁱᵃᵍ, out.file_hamiltonian_diabatic)
   saveMatrixElementTable(∂_∂R, out.file_coupling_∂_∂R_diabatic)
@@ -76,6 +80,13 @@ function makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, A::Array{Fl
       l = dataColumnOfSymetricMatrix(i, j, N)
       @assert lᵖ <= l "$lᵖ>$l"; lᵖ = l;
       @assert l <= Nᶜᵒˡ "$l>$Nᶜᵒˡ"
+      data[Symbol("<$bra|$operator|$ket>")] = A[:, l]
+    end
+  elseif dataType == :general
+    @assert Nᶜᵒˡ == N*N "$(Nᶜᵒˡ)≠$(N*N), N=$N"
+    for l = 1:Nᶜᵒˡ
+      i, j = mpos(l, N)
+      bra = ⚛⚛_STATES[i]; ket = ⚛⚛_STATES[j]
       data[Symbol("<$bra|$operator|$ket>")] = A[:, l]
     end
   else
