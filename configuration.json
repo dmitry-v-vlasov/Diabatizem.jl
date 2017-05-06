@@ -10,7 +10,8 @@
     "coupling-∂_∂R-diabatic": "output-ddr-diabatic.dsv",
     "coupling-∂²_∂R²-diabatic": "output-d2dr2-diabatic.dsv",
     "coupling-∂²_∂R²-diabatic-diagonal": "output-d2dr2-diabatic-diagonal.dsv",
-    "transformation-matrix": "output-transformation-matrix.dsv"
+    "transformation-matrix": "output-transformation-matrix.dsv",
+    "transformation-matrix-general": "output-transformation-matrix-general.dsv"
   },
   "settings": {
     "strategy": "Landau-Zener-with-external-model-data",

@@ -21,6 +21,7 @@ type OutputPaths
   file_coupling_∂²_∂R²_diabatic::AbstractString
   file_coupling_∂²_∂R²_diabatic_diag::AbstractString
   file_transformation_matrix::AbstractString
+  file_transformation_matrix_general::AbstractString
 end
 
 @enum CalculationStrategy LANDAU_ZENER LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA EXTERNAL_MODEL_DATA JUST_MAKE_THEM_ZEROS UNKNOWN
@@ -122,7 +123,8 @@ function loadConfiguration(filePath::AbstractString)
     js["output-data"]["coupling-∂_∂R-diabatic"],
     js["output-data"]["coupling-∂²_∂R²-diabatic"],
     js["output-data"]["coupling-∂²_∂R²-diabatic-diagonal"],
-    js["output-data"]["transformation-matrix"])
+    js["output-data"]["transformation-matrix"],
+    js["output-data"]["transformation-matrix-general"])
 
   settings = loadCalculationSettings(js, input_paths, input_data)
 

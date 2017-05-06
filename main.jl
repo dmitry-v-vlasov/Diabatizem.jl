@@ -25,4 +25,4 @@ Hᴰᵈᵃᵗᵃ = matl2matlupperx(Hᴰ);
 
 (∂²_∂R²ᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag) = calculate∂²_∂R²(Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ, size(Uᴰᵈᵃᵗᵃ, 2))
 
-saveData(Rᵖᵒⁱⁿᵗˢ, Sᵈᵃᵗᵃ, Uᴰᵈᵃᵗᵃ, Hᴰᵈᵃᵗᵃ, ∂_∂Rᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, C.output_paths)
+saveData(Rᵖᵒⁱⁿᵗˢ, S, Sᵈᵃᵗᵃ, Uᴰᵈᵃᵗᵃ, Hᴰᵈᵃᵗᵃ, ∂_∂Rᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, C.output_paths)

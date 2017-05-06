@@ -1,5 +1,6 @@
 using DataFrames
 using Calculus
+using Formatting
 
 import Dierckx
 
@@ -12,6 +13,7 @@ type Data
 end
 
 function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
+    S::Vector{Array{Float64, 2}},
     Sᵈᵃᵗᵃ::Array{Float64, 2},
     Uᴰᵈᵃᵗᵃ::Array{Float64, 2},
     Hᴰᵈᵃᵗᵃ::Array{Float64, 2},
@@ -19,6 +21,8 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
     ∂²_∂R²ᴰᵈᵃᵗᵃ::Array{Float64, 2},
     ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Array{Float64, 2},
     out::OutputPaths)
+  Logging.configure(level=INFO)
+
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Uᴰᵈᵃᵗᵃ, 1)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Hᴰᵈᵃᵗᵃ, 1)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂_∂Rᴰᵈᵃᵗᵃ, 1)
@@ -48,13 +52,60 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   # -----------
 
   # -----------
+  info("Saving the transformation matrix to '$(out.file_transformation_matrix_general)'")
+  saveMatrixList(Rᵖᵒⁱⁿᵗˢ, S, out.file_transformation_matrix_general)
+  info("Saving the transformation matrix table to '$(out.file_transformation_matrix)'")
   saveMatrixElementTable(Sᵗᵃᵇˡᵉ, out.file_transformation_matrix)
+  info("Saving the transformation matrix table to '$(out.file_potentials_diabatic)'")
   saveMatrixElementTable(Hᵈⁱᵃᵍ, out.file_potentials_diabatic)
+  info("Saving the transformation matrix table to '$(out.file_hamiltonian_diabatic)'")
   saveMatrixElementTable(Hᵒᶠᶠᵈⁱᵃᵍ, out.file_hamiltonian_diabatic)
+  info("Saving the transformation matrix table to '$(out.file_coupling_∂_∂R_diabatic)'")
   saveMatrixElementTable(∂_∂R, out.file_coupling_∂_∂R_diabatic)
+  info("Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic)'")
   saveMatrixElementTable(∂²_∂R², out.file_coupling_∂²_∂R²_diabatic)
+  info("Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic_diag)'")
   saveMatrixElementTable(∂²_∂R²ᵈⁱᵃᵍ, out.file_coupling_∂²_∂R²_diabatic_diag)
+  info("Done")
   # -----------
+end
+
+function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Array{Float64, 2}}, file_name::AbstractString)
+  @assert length(Rᵖᵒⁱⁿᵗˢ) == length(M) "$(length(Rᵖᵒⁱⁿᵗˢ))≠$(length(M))"
+  fos = open(file_name, "a")
+  L = length(Rᵖᵒⁱⁿᵗˢ)
+  for l = 1:L
+    Rˡ = Rᵖᵒⁱⁿᵗˢ[l]; Mˡ = M[l]
+    N = size(Mˡ, 1)
+    for i = 1:N, j = 1:N
+      if abs(Mˡ[i, j]) < 1e-15
+        Mˡ[i, j] = 0.0
+      elseif abs(1-abs(Mˡ[i, j])) < 1e-5
+        Mˡ[i, j] = 1.0
+      else
+        Mˡ[i, j] = Mˡ[i, j]
+      end
+    end
+
+    fmtrfunc = generate_formatter("%11.9e")
+    buf = IOBuffer()
+    for i = 1:N, j = 1:N
+      print(buf, fmtrfunc(Mˡ[i, j]))
+      if i <= N && j < N
+        print(buf, "  ")
+      elseif i <= N && j == N
+        print(buf, "\n")
+      end
+    end
+
+    write(fos, "=======================================================\n")
+    write(fos, "R = $Rˡ\n")
+    write(fos, "-----------\n")
+    write(fos, takebuf_string(buf))
+    write(fos, "\n")
+  end
+  flush(fos)
+  close(fos)
 end
 
 function saveMatrixElementTable(data::DataFrame, file_name::AbstractString)
