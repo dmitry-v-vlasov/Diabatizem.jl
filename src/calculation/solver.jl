@@ -14,14 +14,15 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_�
     R = Rᵖᵒⁱⁿᵗˢ[i];
     S = Sˡ[i];
     S⁻¹ = S';
-    #∇S = Dierckx.derivative.(S_spline, R; nu=1)
+    ∇S = Dierckx.derivative.(S_spline, R; nu=1)
     #∇S = matDerivative(R, S_spline)
     #∇S = Calculus.derivative.(Sᶠᵘⁿᶜ, R) # Calculus, what the f***???!!
     #∇S = dirtyDerivative.(Sᶠᵘⁿᶜ, R, 1e-6)
     Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R); ∂_∂Rᴹ = matf2mat(R, ∂_∂Rᵐᵒᵈᵉˡ)
 
     Hᴰ = S⁻¹*Hᴬ*S
-    ∂_∂Rᴰ = ∂_∂Rᴬ - ∂_∂Rᴹ
+    ∂_∂Rᴰ = S⁻¹*∂_∂Rᴬ*S⁻¹ + S⁻¹*∇S
+    #∂_∂Rᴰ = ∂_∂Rᴬ - ∂_∂Rᴹ
     #∂_∂Rᴰ = ∂_∂Rᴬ
 
     Hᵈ[i] = Hᴰ; ∂_∂Rᵈ[i] = ∂_∂Rᴰ
