@@ -29,7 +29,12 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_�
   return Rᵖᵒⁱⁿᵗˢ, Hᵈ, ∂_∂Rᵈ
 end
 
-function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, Rᵛ::Vector{Float64}, C::DiabatizationSettings)
+function transformationMatrix(Hₐ::Array{Function, 2},
+  ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
+  Rᵛ::Vector{Float64},
+  S₀ᵒʷⁿ::Nullable{Array{Float64, 2}},
+  C::DiabatizationSettings)
+
   Logging.configure(level=INFO)
 
   # -----------
@@ -70,7 +75,8 @@ function transformationMatrix(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function
   finish!(progress)
   # -----------
 
-  S₀ = eye(N, N)
+
+  S₀ = isnull(S₀ᵒʷⁿ) ? eye(N, N) : get(S₀ᵒʷⁿ)
   S, Sᵈᵃᵗᵃ = problemCauchy(
     Rᵖᵒⁱⁿᵗˢ, S₀;
     prod_function = diabatizationODE_function,

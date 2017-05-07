@@ -2,7 +2,8 @@
   "input-data": {
     "hamiltonian-adiabatic": "pot-CaH.dsv",
     "coupling_∂_∂R_adiabatic": "merged.dsv",
-    "coupling_∂_∂R_adiabatic_model": "merged.dsv"
+    "coupling_∂_∂R_adiabatic_model": "merged.dsv",
+    "transformation-matrix-initial": "s-matrix.dsv"
   },
   "output-data": {
     "potentials-diabatic": "output-potentials-diabatic.dsv",

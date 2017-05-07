@@ -14,8 +14,11 @@ Aˡᶻᶠ = fitLandauZenerCouplings(Aˡᶻ);
 Rᵈᵃᵗᵃ = ∂_∂Rᵈᵃᵗᵃ[:, 1];
 
 #Rᵖᵒⁱⁿᵗˢ = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, C.settings.diabatization)
+N = size(Hᴬ, 2)
+inp = C.input_paths
+S₀ = isnull(inp.file_transformation_matrix_initial) ? Nullable{Array{Float64, 2}}() : loadInitialConditions(get(inp.file_transformation_matrix_initial), N)
 (Rᵖᵒⁱⁿᵗˢ,
-  S, Sᵈᵃᵗᵃ) = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, C.settings.diabatization);
+  S, Sᵈᵃᵗᵃ) = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, S₀, C.settings.diabatization);
 (ϵ_S, ϵ_Sᵈᵃᵗᵃ) = error_S(S);
 (Rᵖᵒⁱⁿᵗˢ,
   Hᴰ, ∂_∂Rᴰ) = diabatize(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵖᵒⁱⁿᵗˢ, S);

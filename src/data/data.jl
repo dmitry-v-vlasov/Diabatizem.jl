@@ -191,6 +191,16 @@ function build_d_dR!(table_∂_∂R::DataFrame, data::Data, N::Int, interpolatio
   end
 end
 
+function loadInitialConditions(file_name::AbstractString, N::Int)
+  if !isfile(file_name)
+    return Nullable{Array{Float64, 2}}()
+  end
+  M = readdlm(file_name, ' ';
+    header=false, skipstart=0, skipblanks=true,
+    use_mmap=false, quotes=false, dims=(N, N),
+    comments=true, comment_char='#')
+  return Nullable{Array{Float64, 2}}(M)
+end
 
 function splineDegree(interpolationType::InterpolationType)
   if SPLINE_LINEAR::InterpolationType == interpolationType

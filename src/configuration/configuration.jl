@@ -6,6 +6,7 @@ type InputPaths
   file_hamiltonian_adiabatic::AbstractString
   file_coupling_∂_∂R_adiabatic::AbstractString
   file_coupling_∂_∂R_adiabatic_model::Nullable{AbstractString}
+  file_transformation_matrix_initial::Nullable{AbstractString}
 end
 
 type InputData
@@ -110,7 +111,13 @@ end
 function loadConfiguration(filePath::AbstractString)
   js = JSON.parsefile(filePath; dicttype=DataStructures.OrderedDict)
 
-  input_paths = InputPaths(js["input-data"]["hamiltonian-adiabatic"], js["input-data"]["coupling_∂_∂R_adiabatic"], Nullable{AbstractString}())
+  input_paths = InputPaths(
+    js["input-data"]["hamiltonian-adiabatic"],
+    js["input-data"]["coupling_∂_∂R_adiabatic"],
+    Nullable{AbstractString}(),
+    haskey(js["input-data"], "transformation-matrix-initial") ?
+      js["input-data"]["transformation-matrix-initial"] :
+      Nullable{AbstractString}())
 
   Hₐ_data = loadRawData(input_paths.file_hamiltonian_adiabatic)
   fixPotentialAsymptotics!(Hₐ_data, loadUtilitySettings(js["settings"]["utility"]))

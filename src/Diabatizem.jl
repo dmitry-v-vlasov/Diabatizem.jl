@@ -15,6 +15,8 @@ export detectLandauZenerAreas
 export fitLandauZenerCouplings
 export deriveLandauZenerCouplingFunctions
 
+export loadInitialConditions
+
 export dataColumnOfSymetricMatrix, dataSizeOfSymetricMatrix
 export transformationMatrix, error_S
 export diabatize
