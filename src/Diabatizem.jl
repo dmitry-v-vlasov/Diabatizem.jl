@@ -22,7 +22,7 @@ export transformationMatrix, error_S
 export diabatize
 export calculate∂²_∂R²
 
-export matl2matldiag, matl2matlupperx, matl2mdata, matd2vecfsl
+export matl2matldiag, matl2matlupperx, matl2mdata, matd2vecfsl, matl2matdata
 export mpos, mvec
 export int2indexsub, int2molstate
 

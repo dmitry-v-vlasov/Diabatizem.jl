@@ -48,7 +48,8 @@
     "diabatization": {
       "coordinate-start": 30.0,
       "coordinate-step": {"min": 1e-7, "max": 1e-2},
-      "coordinate-stop": 29.0
+      "coordinate-stop": 29.0,
+      "use-last-transformation-matrix-from": 29.1
     },
     "utility": {
       "channel-ionic-number": -1,

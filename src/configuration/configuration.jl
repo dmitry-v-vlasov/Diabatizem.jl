@@ -86,6 +86,7 @@ type DiabatizationSettings
   coordinate_start::Float64
   coordinate_step::Tuple{Float64, Float64}
   coordinate_stop::Float64
+  use_last_transformation_matrix_from::Nullable{Float64}
 end
 
 type CalculationSettings
@@ -201,10 +202,13 @@ function loadDiabatizationSettings(js)
   step_min = abs(js["coordinate-step"]["min"])
   step_max = abs(js["coordinate-step"]["max"])
   @assert step_min <= step_max
+  use_prev_expression = haskey(js, "use-last-transformation-matrix-from") ?
+    Nullable{Float64}(js["use-last-transformation-matrix-from"]) : Nullable{Float64}()
   return DiabatizationSettings(
     js["coordinate-start"],
     (step_min, step_max),
-    js["coordinate-stop"]
+    js["coordinate-stop"],
+    use_prev_expression
   )
 end
 

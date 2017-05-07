@@ -5,15 +5,32 @@ using ProgressMeter
 
 import Dierckx
 
-function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, Sˡ::Vector{Array{Float64, 2}})
+function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
+  Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Array{Float64, 2}}, use_prev_S_from::Nullable{Float64})
+  Logging.configure(level=INFO)
+
+  #increasing_order = Rᵖᵒⁱⁿᵗˢ[1] < Rᵖᵒⁱⁿᵗˢ[end]
+
   Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
   Hᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
   ∂_∂Rᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  Sᵛᵉᶜ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+
   Sᶠᵘⁿᶜ, S_spline = matl2matfsl(Rᵖᵒⁱⁿᵗˢ, Sˡ)
+  Rᵛᵉᶜ = invert_R ? Rᵖᵒⁱⁿᵗˢ[end:-1:1] : Rᵖᵒⁱⁿᵗˢ
+  Sˡᵛᵉᶜ = invert_R ? Sˡ[end:-1:1] : Sˡ
+  N = size(Sˡᵛᵉᶜ[1], 1)
+  Sᵖʳᵉᵛ = Array{Float64, 2}(N, N)
+  info("Transforming matrix elements <|Ĥ|> and <|∂/∂R|> in interval [$(Rᵛᵉᶜ[1]), $(Rᵛᵉᶜ[end])]")
   for i = 1:Nᵖᵒⁱⁿᵗˢ
-    R = Rᵖᵒⁱⁿᵗˢ[i];
-    S = Sˡ[i];
-    S⁻¹ = S';
+    R = Rᵛᵉᶜ[i]
+    # ----
+    S = isnull(use_prev_S_from) || (R > get(use_prev_S_from)) ? Sˡᵛᵉᶜ[i] : Sᵖʳᵉᵛ
+    S⁻¹ = S'
+    if !(isnull(use_prev_S_from) || (R > get(use_prev_S_from)))
+      info("Using previous transformation matrix at $R")
+    end
+    # ----
     ∇S = Dierckx.derivative.(S_spline, R; nu=1)
     #∇S = matDerivative(R, S_spline)
     #∇S = Calculus.derivative.(Sᶠᵘⁿᶜ, R) # Calculus, what the f***???!!
@@ -25,9 +42,16 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_�
     #∂_∂Rᴰ = ∂_∂Rᴬ - ∂_∂Rᴹ
     #∂_∂Rᴰ = ∂_∂Rᴬ
 
+    Sᵛᵉᶜ[i] = S
     Hᵈ[i] = Hᴰ; ∂_∂Rᵈ[i] = ∂_∂Rᴰ
+
+    Sᵖʳᵉᵛ = isnull(use_prev_S_from) || R > get(use_prev_S_from) ? S : Sᵖʳᵉᵛ
   end
-  return Rᵖᵒⁱⁿᵗˢ, Hᵈ, ∂_∂Rᵈ
+  if invert_R
+    return Rᵛᵉᶜ[end:-1:1], Hᵈ[end:-1:1], ∂_∂Rᵈ[end:-1:1], Sᵛᵉᶜ[end:-1:1]
+  else
+    return Rᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, Sᵛᵉᶜ
+  end
 end
 
 function transformationMatrix(Hₐ::Array{Function, 2},

@@ -175,6 +175,21 @@ function matl2matlupperx(Mˡ::Vector{Array{Float64, 2}})
   return Mˡᵈⁱᵃᵍ
 end
 
+function matl2matdata(Mˡ::Vector{Array{Float64, 2}})
+  N = size(Mˡ[1], 1)
+  L = size(Mˡ, 1); Nᴸ = N*N
+  Mˡᵈⁱᵃᵍ = Array{Float64, 2}(L, Nᴸ)
+  for l = 1:L
+    H_vector = Vector{Float64}(Nᴸ)
+    for i = 1:N, j = 1:N
+      k = mvec(i, j, N)
+      H_vector[k] = Mˡ[l][i, j]
+    end
+    Mˡᵈⁱᵃᵍ[l, :] = H_vector
+  end
+  return Mˡᵈⁱᵃᵍ
+end
+
 function matf2mat(x::Float64, Mᶠ::Array{Function, 2})
   N₁ = size(Mᶠ, 1); N₂ = size(Mᶠ, 2)
   M = Array{Float64, 2}(N₁, N₂)

@@ -21,11 +21,12 @@ S₀ = isnull(inp.file_transformation_matrix_initial) ? Nullable{Array{Float64, 
   S, Sᵈᵃᵗᵃ) = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, S₀, C.settings.diabatization);
 (ϵ_S, ϵ_Sᵈᵃᵗᵃ) = error_S(S);
 (Rᵖᵒⁱⁿᵗˢ,
-  Hᴰ, ∂_∂Rᴰ) = diabatize(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵖᵒⁱⁿᵗˢ, S);
+  Hᴰ, ∂_∂Rᴰ, S) = diabatize(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵖᵒⁱⁿᵗˢ, true, S, C.settings.diabatization.use_last_transformation_matrix_from);
 Uᴰᵈᵃᵗᵃ = matl2matldiag(Hᴰ);
 Hᴰᵈᵃᵗᵃ = matl2matlupperx(Hᴰ);
 ∂_∂Rᴰᵈᵃᵗᵃ = matl2matlupperx(∂_∂Rᴰ);
+Sᵈᵃᵗᵃ = matl2matdata(S);
 
-(∂²_∂R²ᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag) = calculate∂²_∂R²(Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ, size(Uᴰᵈᵃᵗᵃ, 2))
+(∂²_∂R²ᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag) = calculate∂²_∂R²(Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ, size(Uᴰᵈᵃᵗᵃ, 2));
 
 saveData(Rᵖᵒⁱⁿᵗˢ, S, Sᵈᵃᵗᵃ, Uᴰᵈᵃᵗᵃ, Hᴰᵈᵃᵗᵃ, ∂_∂Rᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, C.output_paths)
