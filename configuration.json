@@ -1,9 +1,10 @@
 {
   "input-data": {
-    "hamiltonian-adiabatic": "pot-CaH.dsv",
-    "coupling_∂_∂R_adiabatic": "merged.dsv",
-    "coupling_∂_∂R_adiabatic_model": "merged.dsv",
-    "transformation-matrix-initial": "s-matrix.dsv"
+    "hamiltonian-adiabatic": "pot-CaH-45.dsv",
+    "coupling_∂_∂R_adiabatic": "ddr-CaH-45.dsv",
+    "coupling_∂_∂R_adiabatic_model": "ddr-CaH-45.dsv",
+    "transformation-matrix-initial": "s-matrix.dsv",
+    "transformation-matrix": "transformation-89_45_1011-zero_4.3-rounded.dsv"
   },
   "output-data": {
     "potentials-diabatic": "output-potentials-diabatic.dsv",
@@ -37,8 +38,8 @@
       "areas": {
         "single-peak": {
           "error-∂_∂R-peak": 0.01,
-          "vanishing-∂_∂R-value": 0.02,
-          "error-vanishing-∂_∂R-value": 0.015,
+          "vanishing-∂_∂R-value": 5.0,
+          "error-vanishing-∂_∂R-value": 1.0,
           "error-potential-distance-minimal": 0.0005,
           "error-potential-distance-coordinate": 0.001,
           "error-potential-∂_∂R-coordinate": 0.5
@@ -46,10 +47,10 @@
       }
     },
     "diabatization": {
-      "coordinate-start": 30.0,
+      "coordinate-start": 35.0,
       "coordinate-step": {"min": 1e-7, "max": 1e-2},
-      "coordinate-stop": 29.0,
-      "use-last-transformation-matrix-from": 29.1
+      "coordinate-stop": 1.0,
+      "use-last-transformation-matrix-from": 1.0
     },
     "utility": {
       "channel-ionic-number": -1,
@@ -57,7 +58,7 @@
     },
     "interpolation": {
       "hamiltonian": "spline-cubic",
-      "coupling-∂_∂R": "spline-quadratic"
+      "coupling-∂_∂R": "spline-cubic"
     }
   }
 }

@@ -29,6 +29,20 @@ function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}
       push!(M_Αˡᶻ[i, j], Αˡᶻ)
     end
   end
+
+  info()
+  info("=========== Landau-Zener Couplings Summary ======================")
+  for i = 1:N, j=1:N
+    if i < j && j - i == 1
+      info("*********** Landau-Zener Areas of ⟨$i|∂/∂R|$j⟩ ***********")
+      for Αˡᶻᵛ in M_Αˡᶻ[i, j]
+        info(Αˡᶻᵛ)
+      end
+      info("=======================================================")
+    end
+  end
+  info("==================================================================")
+
   return M_Αˡᶻ
 end
 

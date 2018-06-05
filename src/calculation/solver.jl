@@ -25,6 +25,67 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_�
   for i = 1:Nᵖᵒⁱⁿᵗˢ
     R = Rᵛᵉᶜ[i]
     # ----
+    use_prev_solution = !(isnull(use_prev_S_from) || (R > get(use_prev_S_from)))
+    S = isnull(use_prev_S_from) || (R > get(use_prev_S_from)) ? Sˡᵛᵉᶜ[i] : Sᵖʳᵉᵛ
+    if use_prev_solution
+      info("Using previous transformation matrix at $R")
+      S = round(S, 0)
+    end
+    S⁻¹ = S'
+    # ----
+    ∇S = Dierckx.derivative.(S_spline, R; nu=1)
+    #∇S = matDerivative(R, S_spline)
+    #∇S = Calculus.derivative.(Sᶠᵘⁿᶜ, R) # Calculus, what the f***???!!
+    #∇S = dirtyDerivative.(Sᶠᵘⁿᶜ, R, 1e-6)
+    Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R); ∂_∂Rᴹ = matf2mat(R, ∂_∂Rᵐᵒᵈᵉˡ)
+
+    S⁻¹ = S'
+    #S⁻¹ = inv(S)
+    Hᴰ = S⁻¹*Hᴬ*S
+    #∂_∂Rᴰ = S⁻¹*∂_∂Rᴬ*S + S⁻¹*∇S
+    ∂_∂Rᴰ =
+        if use_prev_solution
+            ∇S .= 0.0 # We assume we have constants after some R,
+            S⁻¹*∂_∂Rᴬ*S + S⁻¹* ∇S
+        else
+            S⁻¹ * (∂_∂Rᴬ - ∂_∂Rᴹ) * S
+        end# + inv(S) * ∇S
+    #∂_∂Rᴰ = ∂_∂Rᴬ
+
+    Sᵛᵉᶜ[i] = S
+    Hᵈ[i] = Hᴰ; ∂_∂Rᵈ[i] = ∂_∂Rᴰ
+
+    Sᵖʳᵉᵛ = isnull(use_prev_S_from) || R > get(use_prev_S_from) ? S : Sᵖʳᵉᵛ
+  end
+  if invert_R
+    return Rᵛᵉᶜ[end:-1:1], Hᵈ[end:-1:1], ∂_∂Rᵈ[end:-1:1], Sᵛᵉᶜ[end:-1:1]
+  else
+    return Rᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, Sᵛᵉᶜ
+  end
+end
+
+function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2},
+  Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Array{Float64, 2}}, use_prev_S_from::Nullable{Float64})
+  Logging.configure(level=INFO)
+  info("Diabatization with a precomputed transformation matrix")
+
+  #increasing_order = Rᵖᵒⁱⁿᵗˢ[1] < Rᵖᵒⁱⁿᵗˢ[end]
+
+  Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
+  Hᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  ∂_∂Rᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  Sᵛᵉᶜ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+
+  Sᶠᵘⁿᶜ, S_spline = matl2matfsl(Rᵖᵒⁱⁿᵗˢ, Sˡ)
+  Rᵛᵉᶜ = invert_R ? Rᵖᵒⁱⁿᵗˢ[end:-1:1] : Rᵖᵒⁱⁿᵗˢ
+  Sˡᵛᵉᶜ = invert_R ? Sˡ[end:-1:1] : Sˡ
+  N = size(Sˡᵛᵉᶜ[1], 1)
+  Sᵖʳᵉᵛ = Array{Float64, 2}(N, N)
+  info("Transforming matrix elements <|Ĥ|> and <|∂/∂R|> in interval [$(Rᵛᵉᶜ[1]), $(Rᵛᵉᶜ[end])]")
+  progress = Progress(Nᵖᵒⁱⁿᵗˢ)
+  for i = 1:Nᵖᵒⁱⁿᵗˢ
+    R = Rᵛᵉᶜ[i]
+    # ----
     S = isnull(use_prev_S_from) || (R > get(use_prev_S_from)) ? Sˡᵛᵉᶜ[i] : Sᵖʳᵉᵛ
     S⁻¹ = S'
     if !(isnull(use_prev_S_from) || (R > get(use_prev_S_from)))
@@ -35,17 +96,18 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_�
     #∇S = matDerivative(R, S_spline)
     #∇S = Calculus.derivative.(Sᶠᵘⁿᶜ, R) # Calculus, what the f***???!!
     #∇S = dirtyDerivative.(Sᶠᵘⁿᶜ, R, 1e-6)
-    Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R); ∂_∂Rᴹ = matf2mat(R, ∂_∂Rᵐᵒᵈᵉˡ)
+    Hᴬ = matf2mat(R, Hₐ); ∂_∂Rᴬ = matf2mat(R, ∂_∂R)
 
     Hᴰ = S⁻¹*Hᴬ*S
     ∂_∂Rᴰ = S⁻¹*∂_∂Rᴬ*S + S⁻¹*∇S
-    #∂_∂Rᴰ = ∂_∂Rᴬ - ∂_∂Rᴹ
     #∂_∂Rᴰ = ∂_∂Rᴬ
 
     Sᵛᵉᶜ[i] = S
     Hᵈ[i] = Hᴰ; ∂_∂Rᵈ[i] = ∂_∂Rᴰ
 
     Sᵖʳᵉᵛ = isnull(use_prev_S_from) || R > get(use_prev_S_from) ? S : Sᵖʳᵉᵛ
+    #info("Diabatization performed at the distance R = $R Bohr")
+    ProgressMeter.next!(progress; showvalues = [(:index, i), (:distance, "$R, Bohr")])
   end
   if invert_R
     return Rᵛᵉᶜ[end:-1:1], Hᵈ[end:-1:1], ∂_∂Rᵈ[end:-1:1], Sᵛᵉᶜ[end:-1:1]
@@ -101,7 +163,9 @@ function transformationMatrix(Hₐ::Array{Function, 2},
   # -----------
 
 
+
   S₀ = isnull(S₀ᵒʷⁿ) ? eye(N, N) : get(S₀ᵒʷⁿ)
+  info("Going to solve a Cauchy probem with initial conditions:\n$(S₀);\ncustom conditions are $(isnull(S₀ᵒʷⁿ) ? "null" : "not null")")
   S, Sᵈᵃᵗᵃ = problemCauchy(
     Rᵖᵒⁱⁿᵗˢ, S₀;
     prod_function = diabatizationODE_function,

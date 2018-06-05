@@ -7,6 +7,7 @@ type InputPaths
   file_coupling_∂_∂R_adiabatic::AbstractString
   file_coupling_∂_∂R_adiabatic_model::Nullable{AbstractString}
   file_transformation_matrix_initial::Nullable{AbstractString}
+  file_transformation_matrix::Nullable{AbstractString}
 end
 
 type InputData
@@ -118,6 +119,9 @@ function loadConfiguration(filePath::AbstractString)
     Nullable{AbstractString}(),
     haskey(js["input-data"], "transformation-matrix-initial") ?
       js["input-data"]["transformation-matrix-initial"] :
+      Nullable{AbstractString}(),
+    haskey(js["input-data"], "transformation-matrix") ?
+      js["input-data"]["transformation-matrix"] :
       Nullable{AbstractString}())
 
   Hₐ_data = loadRawData(input_paths.file_hamiltonian_adiabatic)
@@ -140,10 +144,16 @@ function loadConfiguration(filePath::AbstractString)
 end
 
 function fixPotentialAsymptotics!(Hₐ_data::DataFrame, utilitySettings)
+  Logging.configure(level=INFO)
+  if utilitySettings.channel_lowest_number < 0
+    info("Fixing channel asymptotics has been skept in the configuration loading stage.")
+    return
+  end
   Nₚ = size(Hₐ_data, 1)
   Nᵩ = size(Hₐ_data, 2) - 1
   lowest_channel = utilitySettings.channel_lowest_number > 0 ? utilitySettings.channel_lowest_number : 1
   Uₗ_∞ = Hₐ_data[Nₚ, lowest_channel + 1]
+  info("Fixing chennel asymptotics with V₀ᴬ(∞)=$(Uₗ_∞).")
   for line = 1:Nₚ, channel = 1:Nᵩ
     Hₐ_data[line, channel + 1] = Hₐ_data[line, channel + 1] - Uₗ_∞
   end
@@ -159,7 +169,7 @@ function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputD
       throw(DomainError("The configuration setting 'coupling_∂_∂R_adiabatic_model' is obligatory for the strategy $strategy_name"))
     end
   end
-  if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_names
+  if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name
     input_data.coupling_∂_∂R_adiabatic_model = loadRawData(get(input_paths.file_coupling_∂_∂R_adiabatic_model))
   end
 

@@ -43,6 +43,7 @@ type SinglePeakNonadiabaticArea <: NonadiabaticArea
   coordinate_from::Float64
   coordinate_to::Float64
   sign::Int
+  deltaV_at_R0::Float64
   function SinglePeakNonadiabaticArea() new() end
 end
 function -(A::SinglePeakNonadiabaticArea)
@@ -60,14 +61,16 @@ function show(io::IO, A::SinglePeakNonadiabaticArea)
   i = A.states[1]; iˢᵘᵇ = int2indexsub(i); iᵐᵒˡ = int2molstate(i)
   j = A.states[2]; jˢᵘᵇ = int2indexsub(j); jᵐᵒˡ = int2molstate(j)
   sign = A.sign > 0 ? '+' : '-'
+  sigl = A.sign > 0 ? '△' : '▽'
   str_R₀ᵁ = A.coordinate_potentials > 1e-10 ? format("{:.5f}", A.coordinate_potentials) : "undefined"
-  const fe = FormatExpr("Α{1}{2}{3}[{4}{5} {6} {7}{8}|{9}{10}]{11}{12}={13:.5f}, {14}={15:.5f}, {16}={17:.5f}, {18}={19:.6e}, {20}={21}{22}")
+  const fe = FormatExpr("Α{1}{2}{3}[{4}{5} {6} {7}{8}|{9}{10}]{11}{12}={13:.5f}, {14}={15:.5f}, {16}={17:.5f}, {18}={19:.6e}, {20}={21}, {22}={23:.7e}, {24}{25}{26}{27}={28}={29:.7e}{30}")
   print(io,
     format(fe,
-      iˢᵘᵇ, '⋅', jˢᵘᵇ, sign, '△', '→', '⟨', iᵐᵒˡ, jᵐᵒˡ, '⟩',
+      iˢᵘᵇ, '⋅', jˢᵘᵇ, sign, sigl, '→', '⟨', iᵐᵒˡ, jᵐᵒˡ, '⟩',
       '{',
         "Rᵃ", A.coordinate_from, "Rᵇ", A.coordinate_to,
         "R₀", A.coordinate_∂_∂R, "τ(R₀)", A.value_∂_∂R, "R₀ᵁ", str_R₀ᵁ,
+        "ΔV_R₀", A.deltaV_at_R0, "H", jˢᵘᵇ, '⋅', iˢᵘᵇ, "ΔV_R₀/2", A.deltaV_at_R0/2.0,
       '}'))
 end
 
@@ -91,7 +94,7 @@ function show(io::IO, A::LandauZenerArea)
   i = A.states[1]; iˢᵘᵇ = int2indexsub(i); iᵐᵒˡ = int2molstate(i)
   j = A.states[2]; jˢᵘᵇ = int2indexsub(j); jᵐᵒˡ = int2molstate(j)
   sign = A.τ₀ > 0 ? '+' : '-'
-  const fe = FormatExpr("Α{1}{2}{3}[{4}{5} {6} {7}{8}|{9}{10}]{11}{12}={13:.5f}, {14}={15:.5f}, {16}={17:.5f}, {18}={19:.6e}, {20}:{21}{22}")
+  const fe = FormatExpr("Α{1}{2}{3}[{4}{5} {6} {7}{8}|{9}{10}]{11}{12}={13:.9f}, {14}={15:.9f}, {16}={17:.9f}, {18}={19:.9e}, {20}:{21}{22}")
   print(io,
     format(fe,
       iˢᵘᵇ, '⋅', jˢᵘᵇ, sign, "Δˡᶻ", '→', '⟨', iᵐᵒˡ, jᵐᵒˡ, '⟩',

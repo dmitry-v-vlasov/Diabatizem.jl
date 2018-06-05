@@ -22,9 +22,11 @@ export transformationMatrix, error_S
 export diabatize
 export calculate∂²_∂R²
 
-export matl2matldiag, matl2matlupperx, matl2mdata, matd2vecfsl, matl2matdata
+export matl2matldiag, matl2matlupperx, matl2mdata, matd2vecfsl, matl2matdata, matdata2matl
 export mpos, mvec
 export int2indexsub, int2molstate
+
+export load_data, save_data
 
 include("constants/constants.jl")
 include("util/util.jl")

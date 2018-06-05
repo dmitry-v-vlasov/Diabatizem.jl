@@ -5,13 +5,16 @@
     "coupling_∂_∂R_adiabatic_model": "ddr-pspot.dsv"
   },
   "output-data": {
-    "potentials-diabatic": "potentials-diabatic.dsv",
-    "hamiltonian-diabatic": "hamiltonian-diabatic.dsv",
-    "coupling-∂_∂R-diabatic": "ddr-diabatic.dsv",
-    "transformation-matrix": "transformation-matrix.dsv"
+    "potentials-diabatic": "NaH-potentials-diabatic.dsv",
+    "hamiltonian-diabatic": "NaH-hamiltonian-diabatic.dsv",
+    "coupling-∂_∂R-diabatic": "NaH-ddr-diabatic.dsv",
+    "coupling-∂²_∂R²-diabatic": "NaH-output-d2dr2-diabatic.dsv",
+    "coupling-∂²_∂R²-diabatic-diagonal": "NaH-output-d2dr2-diabatic-diagonal.dsv",
+    "transformation-matrix": "NaH-transformation-matrix.dsv",
+    "transformation-matrix-general": "NaH-output-transformation-matrix-general.dsv"
   },
   "settings": {
-    "strategy": "Landau-Zener-with-external-model-data",
+    "strategy": "Landau-Zener",
     "coordinate-start": 0.1,
     "coordinate-step": 0.01,
     "coordinate-piece": 0.005,
@@ -42,9 +45,10 @@
       }
     },
     "diabatization": {
-      "coordinate-start": 100.1,
+      "coordinate-start": 44.1,
       "coordinate-step": {"min": 0.01, "max": 0.01},
-      "coordinate-stop": 0.1
+      "coordinate-stop": 0.0,
+      "use-last-transformation-matrix-from": 20.0
     },
     "utility": {
       "channel-ionic-number": -1,
@@ -52,7 +56,7 @@
     },
     "interpolation": {
       "hamiltonian": "spline-cubic",
-      "coupling-∂_∂R": "spline-linear"
+      "coupling-∂_∂R": "spline-quadratic"
     }
   }
 }

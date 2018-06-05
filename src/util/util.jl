@@ -1,11 +1,25 @@
 using Calculus
 using Logging
 using ProgressMeter
+using DataFrames
 
 import Dierckx
 
 #const tanˡⁱᵐ = 57.28996163075943 # tan(89°)
 const tanˡⁱᵐ = 5.671281819617709 # tan(80°)
+
+function load_data(file::AbstractString; header=true)
+  readtable(
+    file,
+    header = header, separator = ' ',
+    allowcomments = true, commentmark = '#',
+    skipblanks = true, encoding = :utf8, normalizenames = false
+  )
+end
+
+function save_data(data::DataFrame, file::AbstractString; header=true)
+  writetable(file, data; separator=' ', quotemark=' ', header=header, nastring="EMPTY")
+end
 
 # ---------------------------------
 # Miscellaneous Types
@@ -188,6 +202,26 @@ function matl2matdata(Mˡ::Vector{Array{Float64, 2}})
     Mˡᵈⁱᵃᵍ[l, :] = H_vector
   end
   return Mˡᵈⁱᵃᵍ
+end
+
+function matdata2matl(data::DataFrame)
+  @assert !isempty(data)
+  @assert size(data, 2) > 1
+  X = collect(data[:,1])
+  Nᵖᵒⁱⁿᵗˢ = size(data, 1)
+  L = size(data, 2) - 1
+  N = round(Int, √L)
+  @assert N*N == L
+  Y = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  for k = 1:Nᵖᵒⁱⁿᵗˢ
+    Yₖ = Array{Float64, 2}(N, N)
+    for l = 1:N*N
+      i, j = mpos(l, N)
+      Yₖ[i, j] = data[k, l + 1]
+    end
+    Y[k] = Yₖ
+  end
+  return X, Y
 end
 
 function matf2mat(x::Float64, Mᶠ::Array{Function, 2})

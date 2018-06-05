@@ -81,7 +81,7 @@ function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Array{Flo
       if abs(Mˡ[i, j]) < 1e-15
         Mˡ[i, j] = 0.0
       elseif abs(1-abs(Mˡ[i, j])) < 1e-5
-        Mˡ[i, j] = 1.0
+        Mˡ[i, j] = sign(Mˡ[i, j]) * 1.0
       else
         Mˡ[i, j] = Mˡ[i, j]
       end
@@ -154,6 +154,8 @@ function buildData(table_Hₐ::DataFrame, table_∂_∂R::DataFrame, interpolati
 end
 
 function buildHₐ!(table_Hₐ::DataFrame, data::Data, interpolationType::InterpolationType)
+  Logging.configure(level=INFO)
+  info("Doing spline interpolation for adiabatic hamiltonian")
   X = convert(Vector{Float64}, table_Hₐ[1])
   ΔR = X[2] - X[1]
   N = numberOfChannels(table_Hₐ)
@@ -165,6 +167,7 @@ function buildHₐ!(table_Hₐ::DataFrame, data::Data, interpolationType::Interp
       spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=splineDegree(interpolationType), bc="nearest", s=0.0)
       setindex!(data.Hₐ, R -> Dierckx.evaluate(spl, R), i, j)
       setindex!(data.itp_Hₐ, spl, i, j)
+      info("Spline initialized; i=$i, j=$j. Asymptotics: table→ ($(X[end]), $(Y[end])), spline→ ($(X[end]), $(Dierckx.evaluate(spl, X[end])))")
     else
       setindex!(data.Hₐ, R -> 0, i, j)
     end
@@ -172,6 +175,8 @@ function buildHₐ!(table_Hₐ::DataFrame, data::Data, interpolationType::Interp
 end
 
 function build_d_dR!(table_∂_∂R::DataFrame, data::Data, N::Int, interpolationType::InterpolationType)
+  Logging.configure(level=INFO)
+  info("Doing spline interpolation for <|d/dR|> couplings")
   X = convert(Vector{Float64}, table_∂_∂R[1])
   ΔR = X[2] - X[1]
   Nc = size(X, 1) - 1
@@ -179,6 +184,7 @@ function build_d_dR!(table_∂_∂R::DataFrame, data::Data, N::Int, interpolatio
   data.itp_∂_∂R = Array{Dierckx.Spline1D, 2}(N, N)
   for i = 1:N, j = 1:N
     if i ≠ j
+      info("Interpolation for <$i|d/dR|$j>")
       l = dataColumnOfSymetricMatrix(i, j, N)
       Y = convert(Vector{Float64}, table_∂_∂R[l + 1])
 

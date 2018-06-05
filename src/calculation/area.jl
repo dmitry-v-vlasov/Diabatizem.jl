@@ -22,7 +22,7 @@ type DirtyNonadiabaticArea <: NonadiabaticArea
   end
 end
 
-function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃᵗᵃ::Array{Float64, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
+function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃᵗᵃ::Array{Float64, 2}, Hᴬ::Array{Function, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
   Logging.configure(level=INFO)
 
   Rₛₜₐᵣₜ = nonadiabatic_config.coordinate_start; ΔRₘₐₓ = nonadiabatic_config.coordinate_step; Rₛₜₒₚ = Rstop
@@ -210,6 +210,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
             new_area.coordinate_to = darea.coordinate_to
             new_area.sign = darea.sign
             new_area.coordinate_potentials = 0.0
+            new_area.deltaV_at_R0 = Hᴬ[j, j](R₀) - Hᴬ[i, i](R₀)
             if χₚₑₐₖ <= ϵ_yₛₘₐₗₗ
               warn("Skipping low peak (χₚₑₐₖ=$χₚₑₐₖ ≤ ϵ(⟨|∂/∂R|⟩ₛₘₐₗₗ)=$ϵ_yₛₘₐₗₗ): $(new_area)")
               continue
