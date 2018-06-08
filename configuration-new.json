@@ -1,8 +1,8 @@
 {
   "input-data": {
-    "hamiltonian-adiabatic": "pot-CaH.dsv",
-    "coupling_∂_∂R_adiabatic": "ddr-CaH.dsv",
-    "coupling_∂_∂R_adiabatic_model": "ddr-CaH.dsv",
+    "hamiltonian-adiabatic": "/home/universal/projects/PHD/software/data/Ca-H/original/CaH-pots-2017-01-09.dat",
+    "coupling_∂_∂R_adiabatic": "/home/universal/projects/PHD/software/data/Ca-H/original/CaH-ddr-2016-07-01.dat",
+    "coupling_∂_∂R_adiabatic_model": "/home/universal/projects/PHD/software/data/Ca-H/original/CaH-ddr-2016-07-01.dat",
     "transformation-matrix-initial": "s-matrix.dsv",
     "transformation-matrix": "transformation-matrix.dsv"
   },
@@ -47,10 +47,44 @@
       }
     },
     "diabatization": {
-      "coordinate-start": 35.0,
+      "selected-areas": [
+        {
+          "coordinate": 29.63403831,
+          "states": [8, 9]
+        },
+        {
+          "coordinate": 9.7788768,
+          "states": [8, 9]
+        },
+        {
+          "coordinate": 6.2800250,
+          "states": [8, 9]
+        },
+        {
+          "coordinate": 5.2377523,
+          "states": [4, 5]
+        },
+        {
+          "coordinate": 4.4895217,
+          "states": [10, 11]
+        },
+        {
+          "coordinate": 4.2285,
+          "states": [6, 7]
+        },
+        {
+          "coordinate": 3.5693,
+          "states": [3, 4]
+        },
+        {
+          "coordinate": 2.5860,
+          "states": [7, 8]
+        }
+      ],
+      "coordinate-start": 100.0,
       "coordinate-step": {"min": 1e-7, "max": 1e-2},
-      "coordinate-stop": 1.0,
-      "use-last-transformation-matrix-from": 1.0
+      "coordinate-stop": 0.01,
+      "use-last-transformation-matrix-from": 0.01
     },
     "utility": {
       "channel-ionic-number": -1,

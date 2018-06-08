@@ -287,8 +287,8 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{
         Αˡᶻ.coordinate_∂_∂R = R₀; Αˡᶻ.value_∂_∂R = τ
         Αˡᶻ.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
         Αˡᶻ.coordinate_from = Rₐ; Αˡᶻ.coordinate_to = Rᵦ
-        Αˡᶻ.sign = σ
         push!(M_Αˡᶻ[i, j], Αˡᶻ)
+        Αˡᶻ.sign = σ
 
         Αˡᶻ_inv = SinglePeakNonadiabaticArea()
         Αˡᶻ_inv.states = (j, i)
@@ -304,4 +304,41 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{
   end
 
   return M_Αˡᶻ
+end
+
+function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadiabaticArea}, 2}, diabatization_settings::DiabatizationSettings)
+    Logging.configure(level=INFO)
+    info("==== Landau-Zener Areas Filtering =====")
+    N = size(lz_areas, 1)
+    selected_areas = diabatization_settings.areas
+    lz_areas_filtered = Array{Vector{SinglePeakNonadiabaticArea}, 2}(N, N)
+    fill!(lz_areas_filtered, Vector{SinglePeakNonadiabaticArea}())
+    ϵᴿ = 0.2
+    for i = 1:N, j = 1:N
+        lz_ij = lz_areas[i, j]
+        if isempty(lz_ij)
+            info("Skipping the empty list of areas for ⟨$i|∂/∂R|$j⟩>")
+        else
+            info("Filtering the areas for ⟨$i|∂/∂R|$j⟩>: $lz_ij")
+            lz_ij_filtered = filter(
+                Αˡᶻ -> begin
+                    R₀ = Αˡᶻ.coordinate_∂_∂R
+                    ix_s_area = findfirst(
+                        s_area -> begin
+                            a_i = i < j ? s_area.states[1] : s_area.states[2];
+                            a_j = i < j ? s_area.states[2] : s_area.states[1];
+                            R₀ₛ = s_area.coordinate
+                            info("Cheking: a_i = $a_i, a_j = $a_j, i = $i, j = $j, |R₀ - R₀ₛ| = $(abs(R₀ - R₀ₛ))")
+                            return a_i == i && a_j == j && abs(R₀ - R₀ₛ) <= ϵᴿ
+                        end,
+                        selected_areas)
+                    return ix_s_area > 0
+                end,
+                lz_ij)
+            info("Size of filtered areas for for ⟨$i|∂/∂R|$j⟩> - $(length)")
+            lz_areas_filtered[i, j] = lz_ij_filtered
+        end
+    end
+    info("==== End of Landau-Zener Areas Filtering =====")
+    return lz_areas_filtered
 end

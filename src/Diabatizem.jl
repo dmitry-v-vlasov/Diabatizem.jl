@@ -12,6 +12,7 @@ export buildData, saveData
 
 export detectSinglePeakAreas
 export detectLandauZenerAreas
+export filterSelectedLandauZenerAreas
 export fitLandauZenerCouplings
 export deriveLandauZenerCouplingFunctions
 

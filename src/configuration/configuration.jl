@@ -83,7 +83,13 @@ type NonadiabaticAreasConfiguration
   nonadiabatic_areas::Dict{NonadiabaticAreaTypes, NonadiabaticAreaSettings}
 end
 
+type SelectedDiabatizationArea
+    coordinate::Float64
+    states::Tuple{Int, Int}
+end
+
 type DiabatizationSettings
+  areas::Vector{SelectedDiabatizationArea}
   coordinate_start::Float64
   coordinate_step::Tuple{Float64, Float64}
   coordinate_stop::Float64
@@ -209,12 +215,26 @@ function loadUtilitySettings(js)
 end
 
 function loadDiabatizationSettings(js)
+  Logging.configure(level=INFO)
   step_min = abs(js["coordinate-step"]["min"])
   step_max = abs(js["coordinate-step"]["max"])
   @assert step_min <= step_max
   use_prev_expression = haskey(js, "use-last-transformation-matrix-from") ?
     Nullable{Float64}(js["use-last-transformation-matrix-from"]) : Nullable{Float64}()
+
+  js_selected_areas = js["selected-areas"]
+  selected_areas = Vector{SelectedDiabatizationArea}()
+  for area in js_selected_areas
+      state1 = area["states"][1]
+      state2 = area["states"][2]
+      diab_area = SelectedDiabatizationArea(
+        area["coordinate"], (state1, state2))
+      push!(selected_areas, diab_area)
+  end
+  sort!(selected_areas, by = diab_area -> diab_area.coordinate)
+
   return DiabatizationSettings(
+    selected_areas,
     js["coordinate-start"],
     (step_min, step_max),
     js["coordinate-stop"],
