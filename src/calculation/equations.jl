@@ -1,9 +1,9 @@
 using Calculus
-using Sundials
 using Logging
 using ProgressMeter
 
 import Dierckx
+import Sundials
 
 abstract AreaSystem
 

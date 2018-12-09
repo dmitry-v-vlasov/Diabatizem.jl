@@ -1,12 +1,12 @@
 using Calculus
-using Sundials
 using Logging
 using ProgressMeter
 using Combinatorics
 
+using PolynomialRoots
+
 import Dierckx
 import NumericalMath
-import CubicEquation
 
 function diabatize(
     Hₐ::Array{Function, 2},
@@ -153,8 +153,9 @@ function diabatizeWithPartialMatrices(
                             β = - 2 / tan(2 * It - π)
                             γ = - (Rᵉ - R₀) * (R₀ - R¹) / (Rᵉ - R¹)
                             @assert β^2 - 4 * α * γ > 0
-                            solver = CubicEquation.Solver()
-                            τ₁₂ = solver(α, β, γ)
+
+                            τ₁₂ = real(roots([γ, β, α]))
+
                             info("Roots for [$R¹, - $R₀ - , $Rᵉ]: $(τ₁₂)")
                             abs_max = findmax(abs(τ₁₂))
                             τ₀ = τ₁₂[abs_max[2]]
