@@ -67,7 +67,7 @@ mutable struct AsymptoticSettings
   ∂_∂R_zero_value_error::Float64
 end
 
-mutable struct NonadiabaticAreaSettings end
+abstract type NonadiabaticAreaSettings end
 
 mutable struct SinglePeakNonadiabaticAreaSettings <: NonadiabaticAreaSettings{Any}
   error_∂_∂R_peak::Float64
