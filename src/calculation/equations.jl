@@ -86,9 +86,9 @@ function solverTransformationMatrixForAreas(
                             b_j_k_overlapped_e = (Rᵏ⁻ʳᵉ > Rʲ⁻ˡᵉ && Rᵏ⁻ˡᵉ < Rʲ⁻ʳᵉ) || (Rʲ⁻ʳᵉ > Rᵏ⁻ˡᵉ && Rʲ⁻ˡᵉ < Rᵏ⁻ʳᵉ)
                             b_j_k_closed_e = (Rᵏ⁻ʳᵉ > Rʲ⁻ˡᵉ && Rᵏ⁻ˡᵉ > Rʲ⁻ʳᵉ && (Rᵏ⁻ˡᵉ - Rʲ⁻ʳᵉ) < ϵᵟᴿ) ||
                                         (Rʲ⁻ʳᵉ > Rᵏ⁻ˡᵉ && Rʲ⁻ˡᵉ > Rᵏ⁻ʳᵉ && (Rʲ⁻ʳᵉ - Rᵏ⁻ˡᵉ) < ϵᵟᴿ)
-                            #info("Test $states_Aᵏ <-> $states_Aʲ: o=$b_j_k_overlapped, c=$b_j_k_closed, $(Rᵏ⁻ˡ - Rʲ⁻ʳ), $ϵᵟᴿ, $Rᵏ⁻ˡ, $Rʲ⁻ʳ)")
+                            #info("Test $(states_Aᵏ) <-> $(states_Aʲ): o=$b_j_k_overlapped, c=$b_j_k_closed, $(Rᵏ⁻ˡ - Rʲ⁻ʳ), $ϵᵟᴿ, $Rᵏ⁻ˡ, $Rʲ⁻ʳ)")
                             if b_j_k_overlapped || b_j_k_closed
-                                #info("Closed areas for states $states_Aᵏ: overlapped=$b_j_k_overlapped, closed=$b_j_k_closed; j:[$Rʲ⁻ˡ, $Rʲ⁻ʳ], k:[$Rᵏ⁻ˡ, $Rᵏ⁻ʳ]")
+                                #info("Closed areas for states $(states_Aᵏ): overlapped=$b_j_k_overlapped, closed=$b_j_k_closed; j:[$Rʲ⁻ˡ, $Rʲ⁻ʳ], k:[$Rᵏ⁻ˡ, $Rᵏ⁻ʳ]")
                                 if sel_area_bunch_exclude[extras_key_j]
                                     warn("Bunch exclude with key $extras_key_j")
                                     return false
@@ -189,7 +189,7 @@ function solverTransformationMatrixForAreas(
             else
                 #info("For |$(states)⟩ - Identity matrix is used:\n$S₀ˡᵒᶜ")
                 if length(states) == 2
-                    info("Detected a couple of neigbour solutions for the states |$states⟩.")
+                    info("Detected a couple of neigbour solutions for the states |$(states)⟩.")
                     entries = collect(last_matrices)
                     ix_lower = findfirst(entry -> entry[1][end] == states[1], entries)
                     ix_upper = findfirst(entry -> entry[1][1] == states[2], entries)
@@ -203,9 +203,9 @@ function solverTransformationMatrixForAreas(
                         info("There exists a previous solution for the state |$(states[1])⟩: $(Sᴸᵒ[end, end]) (lower)")
                         S₀ˡᵒᶜ[1, 1] = Sᴸᵒ[end, end]
                     end
-                    info("For |$states⟩ - The following matrix is used:\n$S₀ˡᵒᶜ")
+                    info("For |$(states)⟩ - The following matrix is used:\n$S₀ˡᵒᶜ")
                 else
-                    info("For |$states⟩ - Identity matrix is used:\n$S₀ˡᵒᶜ")
+                    info("For |$(states)⟩ - Identity matrix is used:\n$S₀ˡᵒᶜ")
                 end
             end
         else
@@ -244,7 +244,7 @@ function solverTransformationMatrixForAreas(
             ext_S, Sᵈᵃᵗᵃ);
         last_matrix = Array{Float64, 2}(view(solution.S[1], s¹:s², s¹:s²))
         last_matrices[states] = round(last_matrix)
-        info("For the states ⟨$states⟩ the last matrix at R = $(solution.points[1]) is\n$(mat2string(last_matrix))\nrounded to\n$(mat2string(last_matrices[states]))")
+        info("For the states ⟨$(states)⟩ the last matrix at R = $(solution.points[1]) is\n$(mat2string(last_matrix))\nrounded to\n$(mat2string(last_matrices[states]))")
         push!(solutions, solution)
         info("Done")
     end
