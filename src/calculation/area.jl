@@ -148,7 +148,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
                   else
                     push!(Α.pits, (xₘₐₓ, τₘₐₓ))
                   end
-                  info("𝔐aximum of ⟨$i|∂/∂R|$j⟩ found: Rₘₐₓ=$(format("{:.5f}", xₘₐₓ)); τ(Rₘₐₓ)=$(format("{:.6e}", τₘₐₓ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))")
+                  info("𝔐aximum of ⟨$(i)|∂/∂R|$(j)⟩ found: Rₘₐₓ=$(format("{:.5f}", xₘₐₓ)); τ(Rₘₐₓ)=$(format("{:.6e}", τₘₐₓ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))")
                 end
                 # -----------
                 #info("ALG: Found function maximum in an area; τ(xₘₐₓ)≈$(M - ϵₚₑₐₖ); xₗ=$xₗ; xₖ=$xₖ")
@@ -178,7 +178,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
                   else
                     push!(Α.peaks, (xₘᵢₙ, τₘᵢₙ))
                   end
-                  info("𝔐inimum of ⟨$i|∂/∂R|$j⟩ found: Rₘᵢₙ=$(format("{:.5f}", xₘᵢₙ)); τ(Rₘᵢₙ)=$(format("{:.6e}", τₘᵢₙ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))")
+                  info("𝔐inimum of ⟨$(i)|∂/∂R|$(j)⟩ found: Rₘᵢₙ=$(format("{:.5f}", xₘᵢₙ)); τ(Rₘᵢₙ)=$(format("{:.6e}", τₘᵢₙ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))")
                 end
                 # -----------
                 #info("ALG: Found function minimum in an area; τ(xₘᵢₙ)≈$(M - ϵₚₑₐₖ); xₗ=$xₗ; xₖ=$xₖ")
@@ -256,7 +256,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
   info("▫▫▫▫▫▫▫▫▫▫▫ Single Peak Areas Summary ▫▫▫▫▫▫▫▫▫▫▫")
   for i = 1:N, j=1:N
     if i < j && j - i == 1
-      info("*********** Areas of ⟨$i|∂/∂R|$j⟩ ***********")
+      info("*********** Areas of ⟨$(i)|`∂/∂R`|$(j)⟩ ***********")
       for Aᵛ in areas[i, j]
         info(Aᵛ)
       end
@@ -342,9 +342,9 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
     for i = 1:N, j = 1:N
         lz_ij = lz_areas[i, j]
         if isempty(lz_ij)
-            info("Skipping the empty list of areas for ⟨$i|∂/∂R|$j⟩")
+            info("Skipping the empty list of areas for ⟨$(i)|∂/∂R|$(j)⟩")
         else
-            info("Filtering the areas for ⟨$i|∂/∂R|$j⟩...")
+            info("Filtering the areas for ⟨$(i)|∂/∂R|$(j)⟩...")
             info("Area: $lz_ij")
             lz_ij_filtered = filter(
                 Αˡᶻ -> begin
@@ -361,7 +361,7 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
                     return ix_s_area > 0
                 end,
                 lz_ij)
-            info("Size of filtered areas for for ⟨$i|∂/∂R|$j⟩ - $(length)")
+            info("Size of filtered areas for for ⟨$(i)|∂/∂R|$(j)⟩ - $(length)")
             lz_areas_filtered[i, j] = lz_ij_filtered
         end
     end

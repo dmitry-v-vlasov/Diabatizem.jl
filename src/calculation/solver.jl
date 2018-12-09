@@ -144,7 +144,7 @@ function diabatizeWithPartialMatrices(
 
                             info("Smoothing area: $(LZ[i, j]) in interval [$R¹, $Rᵉ]")
                             l¹ = findlast(R -> R < R¹, ∂_∂R_arg); lᵉ = findlast(R -> R <= Rᵉ, ∂_∂R_arg)
-                            info("Curve smoothing for the solution:\n$sol\nin interval [$R¹, $Rᵉ] for ⟨$i|∂/∂R|$j⟩...")
+                            info("Curve smoothing for the solution:\n$sol\nin interval [$R¹, $Rᵉ] for ⟨$(i)|∂/∂R|$(j)⟩...")
                             k = dataColumnOfSymetricMatrix(i, j, N)
                             vR = ∂_∂R_arg[l¹:lᵉ]
                             ddr_sample = ∂_∂Rᴰᵈᵃᵗᵃ[l¹:lᵉ, k]

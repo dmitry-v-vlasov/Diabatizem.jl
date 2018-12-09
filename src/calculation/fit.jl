@@ -61,7 +61,7 @@ function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}
   info("=========== Landau-Zener Couplings Summary ======================")
   for i = 1:N, j=1:N
     if i < j && j - i == 1
-      info("*********** Landau-Zener Areas of ⟨$i|∂/∂R|$j⟩ ***********")
+      info("*********** Landau-Zener Areas of ⟨$(i)|∂/∂R|$(j)⟩ ***********")
       for Αˡᶻᵛ in M_Αˡᶻ[i, j]
         info(Αˡᶻᵛ)
       end
@@ -88,24 +88,24 @@ function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerA
     functions = Vector{Tuple{Float64, Float64, Function}}()
     breakpoints = Vector{Float64}()
     if L > 1
-      info("Piecewise Function for ⟨$i|∂/∂R|$j⟩; Intervals - $L")
+      info("Piecewise Function for ⟨$(i)|∂/∂R|$(j)⟩; Intervals - $L")
       for k = 1:L-1
         Αₖ = areas_sorted[k]; Αₖ₁ = areas_sorted[k+1];
         Rᵃ = Αₖ.R₀; Rᵇ = Αₖ₁.R₀;
         Δ_∂_∂R(R) = abs(Αₖ.∂_∂R(R)) - abs(Αₖ₁.∂_∂R(R))
         if Δ_∂_∂R(Rᵃ)*Δ_∂_∂R(Rᵇ) > 0
-          warn("Cannot establish a breakpoint via root finding in interval [$Rᵃ, $Rᵇ], Δ(∂/∂R(Rᵃ))=$(Δ_∂_∂R(Rᵃ)), Δ(∂_∂R(Rᵇ))=$(Δ_∂_∂R(Rᵇ)); ⟨$i|∂/∂R|$j⟩$(int2indexsub(k))(Rᵃ)=$(Αₖ.∂_∂R(Rᵃ)), ⟨$i|∂/∂R|$j⟩$(int2indexsub(k+1))(Rᵇ)=$(Αₖ₁.∂_∂R(Rᵇ))")
+          warn("Cannot establish a breakpoint via root finding in interval [$Rᵃ, $Rᵇ], Δ(∂/∂R(Rᵃ))=$(Δ_∂_∂R(Rᵃ)), Δ(∂_∂R(Rᵇ))=$(Δ_∂_∂R(Rᵇ)); ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵃ)=$(Αₖ.∂_∂R(Rᵃ)), ⟨$i|∂/∂R|$j⟩$(int2indexsub(k+1))(Rᵇ)=$(Αₖ₁.∂_∂R(Rᵇ))")
           abs_Δ_∂_∂R(R) = abs(Δ_∂_∂R(R))
           result = Optim.optimize(abs_Δ_∂_∂R, Rᵃ, Rᵇ, Optim.Brent())
           Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ = Optim.minimizer(result)
-          warn("Found minimum \"distance\" at R=$Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ; ⟨$i|∂/∂R|$j⟩$(int2indexsub(k))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)), ⟨$i|∂/∂R|$j⟩$(int2indexsub(k+1))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ₁.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ))")
+          warn("Found minimum \"distance\" at R=$Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ; ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)), ⟨$i|∂/∂R|$j⟩$(int2indexsub(k+1))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ₁.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ))")
           push!(breakpoints, Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)
         else
           Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ = fzero(Δ_∂_∂R, Rᵃ, Rᵇ)
           push!(breakpoints, Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)
         end
       end
-      info("Piecewise Function for ⟨$i|∂/∂R|$j⟩; Breakpoints: $breakpoints")
+      info("Piecewise Function for ⟨$(i)|∂/∂R|$(j)⟩; Breakpoints: $breakpoints")
 
       Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗₚᵣₑᵥᵢₒᵤₛ = areas_sorted[1].Rₐ
       for k = 1:L-1
@@ -116,10 +116,10 @@ function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerA
       end
       push!(functions, (Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗₚᵣₑᵥᵢₒᵤₛ, areas_sorted[L].Rᵦ, areas_sorted[L].∂_∂R))
     elseif L == 1
-      info("Single Function for ⟨$i|∂/∂R|$j⟩")
+      info("Single Function for ⟨$(i)|∂/∂R|$(j)⟩")
       push!(functions, (areas_sorted[1].Rₐ, areas_sorted[1].Rᵦ, areas_sorted[1].∂_∂R))
     else
-      info("Trivial Zero Function for ⟨$i|∂/∂R|$j⟩")
+      info("Trivial Zero Function for ⟨$(i)|∂/∂R|$(j)⟩")
       push!(functions, (0.0, Inf, R -> 0.0))
     end
 
