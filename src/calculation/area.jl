@@ -3,7 +3,7 @@ using Optim
 using Formatting
 using Logging
 
-type DirtyNonadiabaticArea <: NonadiabaticArea
+mutable struct DirtyNonadiabaticArea <: NonadiabaticArea
   states::Tuple{Int, Int}
   coordinate_from::Float64
   coordinate_to::Float64

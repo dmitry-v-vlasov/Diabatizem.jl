@@ -2,6 +2,7 @@ using Calculus
 using Logging
 using ProgressMeter
 using Combinatorics
+using Nullables
 
 using PolynomialRoots
 

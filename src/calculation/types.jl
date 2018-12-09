@@ -10,7 +10,7 @@ import Base.-
 abstract Calculation
 
 # ----------- asymptotics -----------
-type PotentialAsymptotic <: Calculation
+mutable struct PotentialAsymptotic <: Calculation
   state::Int
   value::Float64
   coordinate::Float64
@@ -24,7 +24,7 @@ type PotentialAsymptotic <: Calculation
   end
 end
 
-type AsymptoticCalculation <: Calculation
+mutable struct AsymptoticCalculation <: Calculation
   potentials::Array{PotentialAsymptotic}
 end
 # ----------- asymptotics -----------
@@ -35,7 +35,7 @@ function show(io::IO, Aᵛ::Vector{NonadiabaticArea})
   content = join(collect("$(A)" for A in Aᵛ), ",\n")
   print(io, "Α{$content}")
 end
-type SinglePeakNonadiabaticArea <: NonadiabaticArea
+mutable struct SinglePeakNonadiabaticArea <: NonadiabaticArea
   states::Tuple{Int, Int}
   coordinate_∂_∂R::Float64
   value_∂_∂R::Float64
@@ -81,7 +81,7 @@ function show(io::IO, A::SinglePeakNonadiabaticArea)
       '}'))
 end
 
-type LandauZenerArea <: NonadiabaticArea
+mutable struct LandauZenerArea <: NonadiabaticArea
   states::Tuple{Int, Int}
   R₀::Float64
   τ₀::Float64
@@ -112,7 +112,7 @@ end
 # ----------- non-adiabatic areas -----------
 
 # ----------- calculation results -----------
-type LocalSolution
+mutable struct LocalSolution
     states::Vector{Int}
     interval::Tuple{Float64, Float64}
     points::Vector{Float64}

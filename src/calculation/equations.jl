@@ -1,13 +1,14 @@
 using Calculus
 using Logging
 using ProgressMeter
+using Nullables
 
 import Dierckx
 import Sundials
 
 abstract AreaSystem
 
-type AreaBunch <: AreaSystem
+mutable struct AreaBunch <: AreaSystem
     states::Vector{Int}
     areas::Vector{SinglePeakNonadiabaticArea}
     Rˡ::Float64

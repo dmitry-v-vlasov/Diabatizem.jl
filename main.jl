@@ -1,4 +1,5 @@
 using Diabatizem
+using Nullables
 
 C = loadConfiguration("configuration.json");
 D = buildData(C.input_data.hamiltonian_adiabatic, C.input_data.coupling_∂_∂R_adiabatic, C.settings.interpolation);
