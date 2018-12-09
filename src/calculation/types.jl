@@ -100,7 +100,7 @@ function show(io::IO, A::LandauZenerArea)
   i = A.states[1]; iˢᵘᵇ = int2indexsub(i); iᵐᵒˡ = int2molstate(i)
   j = A.states[2]; jˢᵘᵇ = int2indexsub(j); jᵐᵒˡ = int2molstate(j)
   sign = A.τ₀ > 0 ? '+' : '-'
-  const fe = FormatExpr("Α{1}{2}{3}[{4}{5} {6} {7}{8}|{9}{10}]{11}{12}={13:.9f}, {14}={15:.9f}, {16}={17:.9f}, {18}={19:.9e}, {20}:{21}{22}")
+  fe = FormatExpr("Α{1}{2}{3}[{4}{5} {6} {7}{8}|{9}{10}]{11}{12}={13:.9f}, {14}={15:.9f}, {16}={17:.9f}, {18}={19:.9e}, {20}:{21}{22}")
   print(io,
     format(fe,
       iˢᵘᵇ, '⋅', jˢᵘᵇ, sign, "Δˡᶻ", '→', '⟨', iᵐᵒˡ, jᵐᵒˡ, '⟩',
