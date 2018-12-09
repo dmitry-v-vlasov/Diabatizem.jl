@@ -82,30 +82,30 @@ end
 # ---------------------------------
 # Miscellaneous Types
 # ---------------------------------
-immutable IteratorRow{T<:AbstractMatrix}
-  A::T
-end
-Base.start(::IteratorRow)  = 1
-Base.next(it::IteratorRow, i) = (it.A[i, :], i+1)
-Base.done(it::IteratorRow, i) = i > size(it.A, 1)
+# immutable IteratorRow{T<:AbstractMatrix}
+#   A::T
+# end
+# Base.start(::IteratorRow)  = 1
+# Base.next(it::IteratorRow, i) = (it.A[i, :], i+1)
+# Base.done(it::IteratorRow, i) = i > size(it.A, 1)
 
 # ---------------------------------
 # Miscellaneous utility functions
 # ---------------------------------
-function filterMatrixRows(M::Array{Float64, 2}, predicate::Function)
-  Vᵐ = Vector{Vector{Float64}}()
-  for row in IteratorRow(M)
-    if predicate(row)
-      push!(Vᵐ, row)
-    end
-  end
-  L = size(Vᵐ, 1); N = size(Vᵐ[1], 1)
-  Mᵐ = Array{Float64, 2}(L, N)
-  for l = 1:L
-    Mᵐ[l, :] = Vᵐ[l]
-  end
-  return Mᵐ
-end
+# function filterMatrixRows(M::Array{Float64, 2}, predicate::Function)
+#   Vᵐ = Vector{Vector{Float64}}()
+#   for row in IteratorRow(M)
+#     if predicate(row)
+#       push!(Vᵐ, row)
+#     end
+#   end
+#   L = size(Vᵐ, 1); N = size(Vᵐ[1], 1)
+#   Mᵐ = Array{Float64, 2}(L, N)
+#   for l = 1:L
+#     Mᵐ[l, :] = Vᵐ[l]
+#   end
+#   return Mᵐ
+# end
 
 function highDerivative(f::Function, x::Float64, Δx::Float64)
   return abs((f(x + Δx) - f(x - Δx)) / (2 * Δx)) > tanˡⁱᵐ
