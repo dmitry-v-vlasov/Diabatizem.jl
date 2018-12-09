@@ -69,7 +69,7 @@ end
 
 abstract type NonadiabaticAreaSettings end
 
-mutable struct SinglePeakNonadiabaticAreaSettings <: NonadiabaticAreaSettings{Any}
+mutable struct SinglePeakNonadiabaticAreaSettings <: NonadiabaticAreaSettings
   error_∂_∂R_peak::Float64
   vanishing_∂_∂R_value::Float64
   error_vanishing_∂_∂R_value::Float64
