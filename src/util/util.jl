@@ -432,7 +432,7 @@ function splitn(x₀::Float64, x::Float64, f::Function, m₀::Float64, M₀::Flo
   δf = abs(fₓ - fₓ₀)
   if δf < m₀ || fʳᵉᶠ < m₀
     return abs(x - x₀) > Δxₘₐₓ ?
-      ceil(Int, abs(x - x₀)/abs(Δxₘₐₓ)):
+      ceil(Int, abs(x - x₀)/abs(Δxₘₐₓ)) :
       (abs(x - x₀) > Δxₘᵢₙ ?
         ceil(Int, abs(x - x₀)/abs(Δxₘᵢₙ)) :
         1
