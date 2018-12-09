@@ -9,7 +9,7 @@ D = buildData(C.input_data.hamiltonian_adiabatic, C.input_data.coupling_∂_∂R
 
 Hᴬ = D.Hₐ;
 ∂_∂Rᴬ = D.∂_∂R;
-∂_∂Rᵈᵃᵗᵃ = convert(Array{Float64, 2}, C.input_data.coupling_∂_∂R_adiabatic);
+∂_∂Rᵈᵃᵗᵃ = convert(Matrix{Float64}, C.input_data.coupling_∂_∂R_adiabatic);
 
 A = detectSinglePeakAreas(∂_∂Rᴬ, ∂_∂Rᵈᵃᵗᵃ, Hᴬ, C.settings.nonadiabatic_areas, 1000.0);
 Aˡᶻ = detectLandauZenerAreas(Hᴬ, A, C.settings.nonadiabatic_areas, 1000.0);

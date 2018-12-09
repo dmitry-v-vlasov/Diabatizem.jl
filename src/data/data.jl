@@ -14,15 +14,15 @@ mutable struct Data
 end
 
 function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
-    S::Vector{Array{Float64, 2}},
-    Sᵈᵃᵗᵃ::Array{Float64, 2},
-    Uᴰᵈᵃᵗᵃ::Array{Float64, 2},
-    Hᴰᵈᵃᵗᵃ::Array{Float64, 2},
-    ∂_∂Rᴰᵈᵃᵗᵃ::Array{Float64, 2},
-    ∂_∂Rᵐᵈᵃᵗᵃ::Array{Float64, 2},
+    S::Vector{Matrix{Float64}},
+    Sᵈᵃᵗᵃ::Matrix{Float64},
+    Uᴰᵈᵃᵗᵃ::Matrix{Float64},
+    Hᴰᵈᵃᵗᵃ::Matrix{Float64},
+    ∂_∂Rᴰᵈᵃᵗᵃ::Matrix{Float64},
+    ∂_∂Rᵐᵈᵃᵗᵃ::Matrix{Float64},
     ∂_∂R_arg::Vector{Float64},
-    ∂²_∂R²ᴰᵈᵃᵗᵃ::Array{Float64, 2},
-    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Array{Float64, 2},
+    ∂²_∂R²ᴰᵈᵃᵗᵃ::Matrix{Float64},
+    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Matrix{Float64},
     Sl::Vector{LocalSolution},
     out::OutputPaths)
   Logging.configure(level=INFO)
@@ -85,7 +85,7 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   # -----------
 end
 
-function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Array{Float64, 2}}, file_name::AbstractString)
+function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Matrix{Float64}}, file_name::AbstractString)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == length(M) "$(length(Rᵖᵒⁱⁿᵗˢ))≠$(length(M))"
   fos = open(file_name, "a")
   L = length(Rᵖᵒⁱⁿᵗˢ)
@@ -127,7 +127,7 @@ function saveMatrixElementTable(data::DataFrame, file_name::AbstractString)
     writetable(file_name, data; separator=' ', quotemark=' ', header=true, nastring="EMPTY")
 end
 
-function makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, A::Array{Float64, 2}, dataType::Symbol, operator::AbstractString, N::Int)
+function makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, A::Matrix{Float64}, dataType::Symbol, operator::AbstractString, N::Int)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(A, 1)
   data = DataFrame()
   data[:R] = Rᵖᵒⁱⁿᵗˢ
@@ -214,13 +214,13 @@ end
 
 function loadInitialConditions(file_name::AbstractString, N::Int)
   if !isfile(file_name)
-    return Nullable{Array{Float64, 2}}()
+    return Nullable{Matrix{Float64}}()
   end
   M = readdlm(file_name, ' ';
     header=false, skipstart=0, skipblanks=true,
     use_mmap=false, quotes=false, dims=(N, N),
     comments=true, comment_char='#')
-  return Nullable{Array{Float64, 2}}(M)
+  return Nullable{Matrix{Float64}}(M)
 end
 
 function splineDegree(interpolationType::InterpolationType)

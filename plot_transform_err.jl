@@ -1,6 +1,6 @@
 using Plots
 
-x_ticks=Vector{Int}(); append!(x_ticks, 1:9); append!(x_ticks, 10:5:100)
+x_ticks=Vector{Int}(undef, 0); append!(x_ticks, 1:9); append!(x_ticks, 10:5:100)
 x_tick_labels=(x_ticks, collect("$tick" for tick in x_ticks))
 pl = plot(title="Product of Sᵀ⋅S Transforming Matrix (NaH Quasimolecule)",
   xscale = :log10,

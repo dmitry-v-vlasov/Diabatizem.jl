@@ -51,7 +51,7 @@ function diabatizeWithPartialMatrices(
     @assert N == size(Hₐ, 1)
     # ----
     info("Full transformation matrix computation...")
-    Sᵛ = Vector{Array{Float64, 2}}()
+    Sᵛ = Vector{Matrix{Float64}}(undef, 0)
     for R ∈ Rᶜ
         S = eye(N, N)
         for i = 1:Nˡ
@@ -65,10 +65,10 @@ function diabatizeWithPartialMatrices(
     Sᵛᶠ, Sᵛᶠˢᵖ = matl2matfsl(Rᶜ, Sᵛ)
     # ----
     info("Transforming...")
-    Hᵈ = Vector{Array{Float64, 2}}()
-    ∂_∂Rᵈ = Vector{Array{Float64, 2}}()
-    ∂_∂Rᵐ = Vector{Array{Float64, 2}}()
-    Sᵛᵉᶜ = Vector{Array{Float64, 2}}()
+    Hᵈ = Vector{Matrix{Float64}}(undef, 0)
+    ∂_∂Rᵈ = Vector{Matrix{Float64}}(undef, 0)
+    ∂_∂Rᵐ = Vector{Matrix{Float64}}(undef, 0)
+    Sᵛᵉᶜ = Vector{Matrix{Float64}}(undef, 0)
 
     interval_states = Dict{Vector{Int}, Tuple{Float64, Float64}}()
     foreach(s -> begin interval_states[s.states] = s.interval end, Sl)
@@ -81,7 +81,7 @@ function diabatizeWithPartialMatrices(
         Hᴬ = matf2mat(R, Hₐ)
         Hᴰ = S⁻¹*Hᴬ*S
 
-        @assert typeof(Hᴰ) == Array{Float64, 2}
+        @assert typeof(Hᴰ) == Matrix{Float64}
         @assert size(Hᴰ, 1) == N
 
         push!(Hᵈ, Hᴰ)
@@ -106,7 +106,7 @@ function diabatizeWithPartialMatrices(
             ∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = ∂_∂Rᴬ[s¹:sᵉ, s¹:sᵉ] - ∂_∂Rᴹ[s¹:sᵉ, s¹:sᵉ]
         end
 
-        @assert typeof(∂_∂Rᴰ) == Array{Float64, 2}
+        @assert typeof(∂_∂Rᴰ) == Matrix{Float64}
         push!(∂_∂Rᵈ, ∂_∂Rᴰ)
         push!(∂_∂Rᵐ, ∂_∂Rᴹ)
     end
@@ -217,21 +217,21 @@ function diabatizeWithPartialMatrices(
 end
 
 function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
-  Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Array{Float64, 2}}, use_prev_S_from::Nullable{Float64})
+  Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Matrix{Float64}}, use_prev_S_from::Nullable{Float64})
   Logging.configure(level=INFO)
 
   #increasing_order = Rᵖᵒⁱⁿᵗˢ[1] < Rᵖᵒⁱⁿᵗˢ[end]
 
   Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
-  Hᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
-  ∂_∂Rᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
-  Sᵛᵉᶜ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  Hᵈ = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
+  ∂_∂Rᵈ = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
+  Sᵛᵉᶜ = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
 
   Sᶠᵘⁿᶜ, S_spline = matl2matfsl(Rᵖᵒⁱⁿᵗˢ, Sˡ)
   Rᵛᵉᶜ = invert_R ? Rᵖᵒⁱⁿᵗˢ[end:-1:1] : Rᵖᵒⁱⁿᵗˢ
   Sˡᵛᵉᶜ = invert_R ? Sˡ[end:-1:1] : Sˡ
   N = size(Sˡᵛᵉᶜ[1], 1)
-  Sᵖʳᵉᵛ = Array{Float64, 2}(N, N)
+  Sᵖʳᵉᵛ = Matrix{Float64}(undef, N, N)
   info("Transforming matrix elements <|Ĥ|> and <|∂/∂R|> in interval [$(Rᵛᵉᶜ[1]), $(Rᵛᵉᶜ[end])]")
   for i = 1:Nᵖᵒⁱⁿᵗˢ
     R = Rᵛᵉᶜ[i]
@@ -276,22 +276,22 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_�
 end
 
 function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2},
-  Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Array{Float64, 2}}, use_prev_S_from::Nullable{Float64})
+  Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Matrix{Float64}}, use_prev_S_from::Nullable{Float64})
   Logging.configure(level=INFO)
   info("Diabatization with a precomputed transformation matrix")
 
   #increasing_order = Rᵖᵒⁱⁿᵗˢ[1] < Rᵖᵒⁱⁿᵗˢ[end]
 
   Nᵖᵒⁱⁿᵗˢ = size(Rᵖᵒⁱⁿᵗˢ, 1)
-  Hᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
-  ∂_∂Rᵈ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
-  Sᵛᵉᶜ = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  Hᵈ = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
+  ∂_∂Rᵈ = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
+  Sᵛᵉᶜ = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
 
   Sᶠᵘⁿᶜ, S_spline = matl2matfsl(Rᵖᵒⁱⁿᵗˢ, Sˡ)
   Rᵛᵉᶜ = invert_R ? Rᵖᵒⁱⁿᵗˢ[end:-1:1] : Rᵖᵒⁱⁿᵗˢ
   Sˡᵛᵉᶜ = invert_R ? Sˡ[end:-1:1] : Sˡ
   N = size(Sˡᵛᵉᶜ[1], 1)
-  Sᵖʳᵉᵛ = Array{Float64, 2}(N, N)
+  Sᵖʳᵉᵛ = Matrix{Float64}(undef, N, N)
   info("Transforming matrix elements <|Ĥ|> and <|∂/∂R|> in interval [$(Rᵛᵉᶜ[1]), $(Rᵛᵉᶜ[end])]")
   progress = Progress(Nᵖᵒⁱⁿᵗˢ)
   for i = 1:Nᵖᵒⁱⁿᵗˢ
@@ -330,7 +330,7 @@ end
 function transformationMatrix(Hₐ::Array{Function, 2},
   ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
   Rᵛ::Vector{Float64},
-  S₀ᵒʷⁿ::Nullable{Array{Float64, 2}},
+  S₀ᵒʷⁿ::Nullable{Matrix{Float64}},
   C::DiabatizationSettings)
 
   Logging.configure(level=INFO)

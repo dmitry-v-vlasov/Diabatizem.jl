@@ -6,7 +6,7 @@ D = buildData(C.input_data.hamiltonian_adiabatic, C.input_data.coupling_∂_∂R
 
 Hᴬ = D.Hₐ;
 ∂_∂Rᴬ = D.∂_∂R;
-∂_∂Rᵈᵃᵗᵃ = convert(Array{Float64, 2}, C.input_data.coupling_∂_∂R_adiabatic);
+∂_∂Rᵈᵃᵗᵃ = convert(Matrix{Float64}, C.input_data.coupling_∂_∂R_adiabatic);
 
 A = detectSinglePeakAreas(∂_∂Rᴬ, ∂_∂Rᵈᵃᵗᵃ, Hᴬ, C.settings.nonadiabatic_areas, 1000.0);
 Aˡᶻ = detectLandauZenerAreas(Hᴬ, A, C.settings.nonadiabatic_areas, 1000.0);
@@ -17,7 +17,7 @@ Rᵈᵃᵗᵃ = ∂_∂Rᵈᵃᵗᵃ[:, 1];
 #Rᵖᵒⁱⁿᵗˢ = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, C.settings.diabatization)
 N = size(Hᴬ, 2)
 inp = C.input_paths
-S₀ = isnull(inp.file_transformation_matrix_initial) ? Nullable{Array{Float64, 2}}() : loadInitialConditions(get(inp.file_transformation_matrix_initial), N)
+S₀ = isnull(inp.file_transformation_matrix_initial) ? Nullable{Matrix{Float64}}() : loadInitialConditions(get(inp.file_transformation_matrix_initial), N)
 (Rᵖᵒⁱⁿᵗˢ,
   S, Sᵈᵃᵗᵃ) = transformationMatrix(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, S₀, C.settings.diabatization);
 (ϵ_S, ϵ_Sᵈᵃᵗᵃ) = error_S(S);

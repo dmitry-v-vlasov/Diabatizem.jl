@@ -12,7 +12,7 @@ function potentialAsymptoticValues(potentials::Array{Function, 2},
                                     safety_coordinate_step::Float64,
                                     asymptotic_value_error::Float64)
   N = size(potentials, 1)
-  potentialAsymptotics = Array{PotentialAsymptotic}(N)
+  potentialAsymptotics = Vector{PotentialAsymptotic}(undef, N)
 
   R₀ = coordinate_start
   ΔR = coordinate_step

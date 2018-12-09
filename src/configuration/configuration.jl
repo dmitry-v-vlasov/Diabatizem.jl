@@ -229,7 +229,7 @@ function loadDiabatizationSettings(js)
     Nullable{Float64}(js["use-last-transformation-matrix-from"]) : Nullable{Float64}()
 
   js_selected_areas = js["selected-areas"]
-  selected_areas = Vector{SelectedDiabatizationArea}()
+  selected_areas = Vector{SelectedDiabatizationArea}(undef, 0)
   for area in js_selected_areas
       state1 = area["states"][1]
       state2 = area["states"][2]

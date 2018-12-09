@@ -117,8 +117,8 @@ mutable struct LocalSolution
     points::Vector{Float64}
     original_points::Vector{Float64}
     peaks::Vector{Tuple{Float64, Float64}}
-    S::Vector{Array{Float64, 2}}
-    Sᵈᵃᵗᵃ::Array{Float64, 2}
+    S::Vector{Matrix{Float64}}
+    Sᵈᵃᵗᵃ::Matrix{Float64}
 end
 function show(io::IO, ls::LocalSolution)
     print(io, "Solution{⟨$(ls.states)⟩, [$(ls.interval[1]), $(ls.interval[2])], points: $(length(ls.points)), peaks: $(ls.peaks)}")

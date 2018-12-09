@@ -22,7 +22,7 @@ mutable struct DirtyNonadiabaticArea <: NonadiabaticArea
   end
 end
 
-function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃᵗᵃ::Array{Float64, 2}, Hᴬ::Array{Function, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
+function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃᵗᵃ::Matrix{Float64}, Hᴬ::Array{Function, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
   Logging.configure(level=INFO)
 
   Rₛₜₐᵣₜ = nonadiabatic_config.coordinate_start; ΔRₘₐₓ = nonadiabatic_config.coordinate_step; Rₛₜₒₚ = Rstop
@@ -31,7 +31,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
 
   # -----------
   M_∂_∂R_sorted = sortrows(M_∂_∂Rᵈᵃᵗᵃ; by=row->(row[1]))
-  M_∂_∂R_vector_filtered = Vector{Vector{Float64}}()
+  M_∂_∂R_vector_filtered = Vector{Vector{Float64}}(undef, 0)
   for row in IteratorRow(M_∂_∂R_sorted)
     R = row[1]
     if Rₛₜₐᵣₜ <= R <= Rₛₜₒₚ
@@ -39,7 +39,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
     end
   end
   L = size(M_∂_∂R_vector_filtered, 1); Nᶜ = size(M_∂_∂R_vector_filtered[1], 1)
-  M_∂_∂Rᵍᵒᵒᵈ = Array{Float64, 2}(L, Nᶜ)
+  M_∂_∂Rᵍᵒᵒᵈ = Matrix{Float64}(undef, L, Nᶜ)
   for l = 1:L
     M_∂_∂Rᵍᵒᵒᵈ[l, :] = M_∂_∂R_vector_filtered[l]
   end
@@ -52,8 +52,8 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
   ϵ_yₛₘₐₗₗ = abs(area_config.error_vanishing_∂_∂R_value)
 
   N = size(M_∂_∂R, 1)
-  areas = Array{Vector{NonadiabaticArea}, 2}(N, N)
-  fill!(areas, Vector{NonadiabaticArea}())
+  areas = Array{Vector{NonadiabaticArea}, 2}(undef, N, N)
+  fill!(areas, Vector{NonadiabaticArea}(undef, 0))
 
   info("Single peak non-adiabatic area detection.")
   info("Search configuration: [$Rₛₜₐᵣₜ, $Rₛₜₒₚ], ΔRₘₐₓ=$ΔRₘₐₓ; R in data table: [$(M_∂_∂Rᵍᵒᵒᵈ[1, 1]), $(M_∂_∂Rᵍᵒᵒᵈ[L, 1])]; ϵ(⟨|∂/∂R|⟩ₚₑₐₖ)=$ϵₚₑₐₖ; ⟨|∂/∂R|⟩ₛₘₐₗₗ=$yₛₘₐₗₗ; ϵ(⟨|∂/∂R|⟩ₛₘₐₗₗ)=$ϵ_yₛₘₐₗₗ")
@@ -62,10 +62,10 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
       info("⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩ Scanning ⟨$(i)|∂/∂R|$(j)⟩ ⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩")
       τ = M_∂_∂R[i, j]
 
-      dirty_areas = Vector{DirtyNonadiabaticArea}()
-      areas[i, j] = Vector{NonadiabaticArea}()
+      dirty_areas = Vector{DirtyNonadiabaticArea}(undef, 0)
+      areas[i, j] = Vector{NonadiabaticArea}(undef, 0)
 
-      table = Vector{Tuple{Float64, Float64}}()
+      table = Vector{Tuple{Float64, Float64}}(undef, 0)
       for row in IteratorRow(M_∂_∂Rᵍᵒᵒᵈ)
         R = row[1]; τᵗ = row[dataColumnOfSymetricMatrix(i, j, N) + 1]
         push!(table, (R, τᵗ))
@@ -196,7 +196,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
       end
 
       if size(dirty_areas, 1) > 0
-        single_peak_areas = Vector{DirtyNonadiabaticArea}()
+        single_peak_areas = Vector{DirtyNonadiabaticArea}(undef, 0)
         for darea in dirty_areas
           if size(darea.peaks, 1) == 1 && size(darea.pits, 1) == 0
             dpeak = first(darea.peaks)
@@ -243,7 +243,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
     if i > j && i - j == 1
       if (!isdefined(areas[j, i]) || isempty(areas[j, i])) continue end
       K = length(areas[j, i])
-      conjugate_areas = Vector{NonadiabaticArea}(0)
+      conjugate_areas = Vector{NonadiabaticArea}(undef, 0)
       setindex!(areas, i, j, conjugate_areas)
       for k = 1:K
         push!(conjugate_areas, -(areas[j, i][k]))
@@ -271,8 +271,8 @@ end
 function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{NonadiabaticArea}, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
     Logging.configure(level=INFO)
   N = size(M_Hₐ, 1)
-  M_Αˡᶻ = Array{Vector{SinglePeakNonadiabaticArea}, 2}(N, N)
-  fill!(M_Αˡᶻ, Vector{SinglePeakNonadiabaticArea}())
+  M_Αˡᶻ = Array{Vector{SinglePeakNonadiabaticArea}, 2}(undef, N, N)
+  fill!(M_Αˡᶻ, Vector{SinglePeakNonadiabaticArea}(undef, 0))
 
   Α_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
   ϵˡᶻ = abs(Α_config.error_potential_∂_∂R_coordinate)
@@ -282,8 +282,8 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{
     if i >= j || abs(i - j) ≠ 1
       continue
     end
-    M_Αˡᶻ[i, j] = Vector{SinglePeakNonadiabaticArea}()
-    M_Αˡᶻ[j, i] = Vector{SinglePeakNonadiabaticArea}()
+    M_Αˡᶻ[i, j] = Vector{SinglePeakNonadiabaticArea}(undef, 0)
+    M_Αˡᶻ[j, i] = Vector{SinglePeakNonadiabaticArea}(undef, 0)
 
     Αₛ = areas[i, j]
     for Α in Αₛ
@@ -336,8 +336,8 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
     info("==== Landau-Zener Areas Filtering =====")
     N = size(lz_areas, 1)
     selected_areas = diabatization_settings.areas
-    lz_areas_filtered = Array{Vector{SinglePeakNonadiabaticArea}, 2}(N, N)
-    fill!(lz_areas_filtered, Vector{SinglePeakNonadiabaticArea}())
+    lz_areas_filtered = Array{Vector{SinglePeakNonadiabaticArea}, 2}(undef, N, N)
+    fill!(lz_areas_filtered, Vector{SinglePeakNonadiabaticArea}(undef, 0))
     ϵᴿ = 0.2
     for i = 1:N, j = 1:N
         lz_ij = lz_areas[i, j]

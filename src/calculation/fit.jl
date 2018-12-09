@@ -32,7 +32,7 @@ function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}
 
       model(R::Vector{Float64}, p::Vector{Float64}) = p[2] ./ ((R - p[1]).^2 + 4 * (p[2])^2)
      #  jacobian_model(R::Vector{Float64}, p::Vector{Float64}) = begin
-     #    J = Array{Float64}(length(R),length(p))
+     #    J = Matrix{Float64}(undef, length(R), length(p))
      #    J[:,1] = 2*p[2]*(R - p[1])./((R - p[1]).^2 + 4 * (p[2])^2).^2    #dmodel/dp[1]
      #    J[:,2] = ((R - p[1]).^2 - 4 * (p[2])^2)./((R - p[1]).^2 + 4 * (p[2])^2).^2  #dmodel/dp[2]
      #    return J
@@ -86,7 +86,7 @@ function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerA
     areas_sorted = sort(areas, alg = InsertionSort, lt = (Α₁, Α₂) -> Α₁.R₀ < Α₂.R₀)
     L = size(areas_sorted, 1)
     functions = Vector{Tuple{Float64, Float64, Function}}()
-    breakpoints = Vector{Float64}()
+    breakpoints = Vector{Float64}(undef, 0)
     if L > 1
       info("Piecewise Function for ⟨$(i)|∂/∂R|$(j)⟩; Intervals - $L")
       for k = 1:L-1

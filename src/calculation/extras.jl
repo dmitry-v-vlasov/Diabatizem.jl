@@ -26,8 +26,8 @@ function expandLocalSolutions(solutions::Vector{LocalSolution}, Rᵛ::Vector{Flo
         Rᵐ = mergeGrids(Rᵛ, Rᴸˢ, solution.points, Rᴿˢ)
         @assert issorted(Rᵐ)
         Rᵖ = solution.points
-        Rˢ = Vector{Float64}()
-        Sˢ = Vector{Array{Float64, 2}}()
+        Rˢ = Vector{Float64}(undef, 0)
+        Sˢ = Vector{Matrix{Float64}}(undef, 0)
         for R ∈ Rᵐ
             push!(Rˢ, R)
             if R < Rᴸˢ[1]
@@ -51,7 +51,7 @@ end
 
 function mergeGrids(Rᵛ, Rᴸˢ, Rˢ, Rᴿˢ)
     Logging.configure(level=INFO)
-    Rᵐ = Vector{Float64}()
+    Rᵐ = Vector{Float64}(undef, 0)
     @assert Rᵛ[1] <= Rᴸˢ[1]
     @assert Rᴸˢ[1] < Rˢ[1]
     @assert Rˢ[1] < Rˢ[end]
@@ -99,7 +99,7 @@ end
 
 function smoothing_sigmoid(
     solution::LocalSolution, Rᵛ::Vector{Float64},
-    S¹ᵗ::Array{Float64, 2}, Sᵉᵗ::Array{Float64, 2},
+    S¹ᵗ::Matrix{Float64}, Sᵉᵗ::Matrix{Float64},
     ϵ::Float64, ϵ⁽¹⁾::Float64)
     Logging.configure(level=INFO)
     states = solution.states; s¹ = states[1]; sᵉ = states[end]
@@ -107,9 +107,9 @@ function smoothing_sigmoid(
     R = solution.points
 
     Sv = solution.S
-    S = Vector{Array{Float64, 2}}()
+    S = Vector{Matrix{Float64}}(undef, 0)
     for Si ∈ Sv
-        push!(S, Array{Float64, 2}(view(Si, s¹:sᵉ, s¹:sᵉ)))
+        push!(S, Matrix{Float64}(view(Si, s¹:sᵉ, s¹:sᵉ)))
     end
     Svf = matl2matfsl(R, Sv)[1]
 
@@ -179,7 +179,7 @@ function boundaryFunctions(
 end
 
 function dummyFunctions(
-    S¹ᵗ::Array{Float64, 2}, Sᵉᵗ::Array{Float64, 2}, N::Int)
+    S¹ᵗ::Matrix{Float64}, Sᵉᵗ::Matrix{Float64}, N::Int)
     Sᴸ = Array{Function, 2}(N, N); Sᴿ = Array{Function, 2}(N, N)
     for i = 1:N, j = 1:N
         Sᴸ[i, j] = R -> S¹ᵗ[i, j]
@@ -238,7 +238,7 @@ end
 
 function internalFunctions(
     Rᴸⁱⁿᵗ::Vector{Float64}, Rᴿⁱⁿᵗ::Vector{Float64},
-    Sv::Vector{Array{Float64, 2}})
+    Sv::Vector{Matrix{Float64}})
     Sᴸⁱⁿᵗ = Sv[1:length(Rᴸⁱⁿᵗ)]; Sᴿⁱⁿᵗ = Sv[end-length(Rᴿⁱⁿᵗ)+1:end]
     Sᴸⁱⁿᵗ⁻ᶠ = matl2matfsl(Rᴸⁱⁿᵗ, Sᴸⁱⁿᵗ, behaviour="nearest")[1]
     Sᴿⁱⁿᵗ⁻ᶠ = matl2matfsl(Rᴿⁱⁿᵗ, Sᴿⁱⁿᵗ, behaviour="nearest")[1]
@@ -262,7 +262,7 @@ function argumentGrid(Rᴸ::Vector{Float64}, Rᴿ::Vector{Float64}, Rᵛ::Vector
 end
 
 function solutionBoundaryPoints(
-    Rv::Vector{Float64}, Sv::Vector{Array{Float64, 2}},
+    Rv::Vector{Float64}, Sv::Vector{Matrix{Float64}},
     ϵ::Float64, ϵ⁽¹⁾::Float64; rev=false, max_Δ⁽⁰⁾ = 10, max_Δ⁽¹⁾ = 10)
     Logging.configure(level=INFO)
     max_data_count = 100
@@ -327,12 +327,12 @@ dS_dR₄ = (Sᵏ⁺², Sᵏ⁺¹, Sᵏ⁻¹, Sᵏ⁻², h) -> begin return (-S�
 # push!(vΔS⁽⁰⁾, ΔS⁽⁰⁾ᵏ); push!(vΔS⁽¹⁾, ΔS⁽¹⁾ᵏ)
 
 # S⁽¹⁾ᵏ⁻¹ = zeros(N, N); S⁽¹⁾ᵏ = zeros(N, N)
-# vΔS⁽⁰⁾ = Vector{Float64}(); ΔS⁽⁰⁾ᵏ = zeros(N, N)
-# vΔS⁽¹⁾ = Vector{Float64}(); ΔS⁽¹⁾ᵏ = zeros(N, N)
+# vΔS⁽⁰⁾ = Vector{Float64}(undef, 0); ΔS⁽⁰⁾ᵏ = zeros(N, N)
+# vΔS⁽¹⁾ = Vector{Float64}(undef, 0); ΔS⁽¹⁾ᵏ = zeros(N, N)
 
 
 function calculate∂²_∂R²(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
-    ∂_∂Rᴰᵈᵃᵗᵃ::Array{Float64, 2},
+    ∂_∂Rᴰᵈᵃᵗᵃ::Matrix{Float64},
     N::Int)
     @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂_∂Rᴰᵈᵃᵗᵃ, 1)
 
@@ -340,10 +340,10 @@ function calculate∂²_∂R²(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
     M = size(∂_∂Rᴰᵈᵃᵗᵃ, 2)
     @assert M == dataSizeOfSymetricMatrix(N) "$M≠$(dataSizeOfSymetricMatrix(N))"
 
-    ∂²_∂R²ᴰᵈᵃᵗᵃ = Array{Float64, 2}(L, M)
-    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag = Array{Float64, 2}(L, N)
-    ∂_∂Rᴰᵈᵃᵗᵃ_func = Array{Function, 2}(N, N)
-    ∂_∂Rᴰᵈᵃᵗᵃ_spl = Array{Dierckx.Spline1D, 2}(N, N)
+    ∂²_∂R²ᴰᵈᵃᵗᵃ = Matrix{Float64}(undef, L, M)
+    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag = Matrix{Float64}(undef, L, N)
+    ∂_∂Rᴰᵈᵃᵗᵃ_func = Array{Function, 2}(undef, N, N)
+    ∂_∂Rᴰᵈᵃᵗᵃ_spl = Array{Dierckx.Spline1D, 2}(undef, N, N)
     lᵖ = 1
     for i=1:N, j=i+1:N
       l = dataColumnOfSymetricMatrix(i, j, N)
@@ -362,8 +362,8 @@ function calculate∂²_∂R²(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
       ∂_∂Rᴰᵈᵃᵗᵃ_spl[i, i] = Dierckx.Spline1D(Rᵖᵒⁱⁿᵗˢ, zeros(L); w=ones(length(Rᵖᵒⁱⁿᵗˢ)), k=1, bc="nearest", s=0.0)
     end
 
-    ∂²_∂R²ᴰᵈᵃᵗᵃ = Array{Float64, 2}(L, M)
-    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag = Array{Float64, 2}(L, N)
+    ∂²_∂R²ᴰᵈᵃᵗᵃ = Matrix{Float64}(undef, L, M)
+    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag = Matrix{Float64}(undef, L, N)
     for lʳ = 1:L
       R = Rᵖᵒⁱⁿᵗˢ[lʳ]
       τ⁽¹⁾ = matf2mat(R, ∂_∂Rᴰᵈᵃᵗᵃ_func)

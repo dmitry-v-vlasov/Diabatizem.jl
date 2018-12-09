@@ -50,7 +50,7 @@ function solverTransformationMatrixForAreas(
     ϵᵟᴿ = C.area_closeness
     info("Grouping the selected areas into bunches by their closeness within ϵᵟᴿ = $(ϵᵟᴿ) a.u.l.")
     bunched_areas = Set{Int}()
-    bunches = Vector{AreaBunch}()
+    bunches = Vector{AreaBunch}(undef, 0)
     for k = 1:length(given_areas)
         if k ∈ bunched_areas
             continue
@@ -126,7 +126,7 @@ function solverTransformationMatrixForAreas(
                         end
                     end,
                     enumerate(remaining_areas)))
-        bunch_of_areas = Vector{SinglePeakNonadiabaticArea}()
+        bunch_of_areas = Vector{SinglePeakNonadiabaticArea}(undef, 0)
         push!(bunch_of_areas, Aᵏ)
         for remaining_area_from_bunch ∈ remaining_bunch_of_areas
             push!(bunch_of_areas, remaining_area_from_bunch)
@@ -145,9 +145,9 @@ function solverTransformationMatrixForAreas(
     info("\n------")
     info("Solving Cauchy problems...")
 
-    last_matrices = Dict{Vector{Int}, Array{Float64, 2}}()
+    last_matrices = Dict{Vector{Int}, Matrix{Float64}}()
 
-    solutions = Vector{LocalSolution}();
+    solutions = Vector{LocalSolution}(undef, 0);
     for bunch ∈ bunches
         info("=====================")
         info("Making a new Cauchy problem for the areas:\n$bunch")
@@ -216,7 +216,7 @@ function solverTransformationMatrixForAreas(
         info("The solution contains $(length(Rᵖᵒⁱⁿᵗˢ)) points in the interval [$(Rᵖᵒⁱⁿᵗˢ[1]), $(Rᵖᵒⁱⁿᵗˢ[end])].")
         N = size(∂_∂Rᵐᵒᵈᵉˡ, 1)
         info("Extending the solution matrix size from $(Nˡᵒᶜ)×$(Nˡᵒᶜ) to $N×$N")
-        ext_S = Vector{Array{Float64, 2}}()
+        ext_S = Vector{Matrix{Float64}}(undef, 0)
         for l ∈ 1:length(Rᵖᵒⁱⁿᵗˢ)
             ext_Sˡ = eye(N, N)
             for i = s¹:s², j = s¹:s²
@@ -242,7 +242,7 @@ function solverTransformationMatrixForAreas(
             Rᵖᵒⁱⁿᵗˢ, Rᵖᵒⁱⁿᵗˢ,
             peaks,
             ext_S, Sᵈᵃᵗᵃ);
-        last_matrix = Array{Float64, 2}(view(solution.S[1], s¹:s², s¹:s²))
+        last_matrix = Matrix{Float64}(view(solution.S[1], s¹:s², s¹:s²))
         last_matrices[states] = round(last_matrix)
         info("For the states ⟨$(states)⟩ the last matrix at R = $(solution.points[1]) is\n$(mat2string(last_matrix))\nrounded to\n$(mat2string(last_matrices[states]))")
         push!(solutions, solution)
@@ -257,7 +257,7 @@ function transformationMatrixForArea(
     Rˢᵗᵃʳᵗ::Float64, Rˢᵗᵒᵖ::Float64,
     ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
     Rᵛ::Vector{Float64},
-    S₀ᵒʷⁿ::Nullable{Array{Float64, 2}},
+    S₀ᵒʷⁿ::Nullable{Matrix{Float64}},
     C::DiabatizationSettings)
 
   Logging.configure(level=INFO)
@@ -285,7 +285,7 @@ function transformationMatrixForArea(
 
   # -----------
   progress = progressCreate(100, "Making R grid: ", :yellow); progressᶜ = 0
-  Rᵖᵒⁱⁿᵗˢ = Vector{Float64}()
+  Rᵖᵒⁱⁿᵗˢ = Vector{Float64}(undef, 0)
   Rₘᵢₙ = min(Rˢᵗᵃʳᵗ, Rˢᵗᵒᵖ); Rₘₐₓ = max(Rˢᵗᵃʳᵗ, Rˢᵗᵒᵖ)
   R⃜ = filter(R -> Rₘᵢₙ<=R<=Rₘₐₓ, σR > 0 ? unique(Rᵛ) : reverse(unique(Rᵛ))); L = length(R⃜)
   for l = 1:L-1
@@ -328,10 +328,10 @@ function transformationMatrixForArea(
   end
 end
 
-function error_S(S::Vector{Array{Float64, 2}})
+function error_S(S::Vector{Matrix{Float64}})
   L = size(S, 1)
   N = size(S[1], 1)
-  ϵ_S = Vector{Array{Float64, 2}}(L)
+  ϵ_S = Vector{Matrix{Float64}}(undef, L)
   for l = 1:L
     ϵ_S[l] = S[l]'*S[l]
   end
@@ -341,8 +341,8 @@ end
 
 let
   global diabatizationODE_function
-  S = Array{Float64, 2}(); dS_dR = Array{Float64, 2}()
-  ∂_∂R = Array{Float64, 2}(); ∂_∂Rᵐᵒᵈᵉˡ = Array{Float64, 2}()
+  S = Matrix{Float64}(undef, 0, 0); dS_dR = Matrix{Float64}(undef, 0, 0)
+  ∂_∂R = Matrix{Float64}(undef, 0, 0); ∂_∂Rᵐᵒᵈᵉˡ =  Matrix{Float64}(undef, 0, 0)
 
   """
   We do not aspite to have an optimal implementation and
@@ -354,8 +354,8 @@ let
     N = data[1]
     @assert(N*N == size(S_v, 1), "With N = $N: $(N*N) ≠ $(size(S_v, 1)).")
     if size(S, 1) ≠ N || size(dS_dR, 1) ≠ N || size(∂_∂R, 1) ≠ N || size(∂_∂Rᵐᵒᵈᵉˡ, 1) ≠ N
-      S = Array{Float64, 2}(N, N); dS_dR = Array{Float64, 2}(N, N)
-      ∂_∂R = Array{Float64, 2}(N, N); ∂_∂Rᵐᵒᵈᵉˡ = Array{Float64, 2}(N, N)
+      S =  Matrix{Float64}(undef, N, N); dS_dR =  Matrix{Float64}(undef, N, N)
+      ∂_∂R =  Matrix{Float64}(undef, N, N); ∂_∂Rᵐᵒᵈᵉˡ =  Matrix{Float64}(undef, N, N)
     end
 
     vec2mat!(S_v, S)
@@ -375,7 +375,7 @@ end
 
 function problemCauchy(
   Xᵖᵒⁱⁿᵗˢ::Vector{Float64},
-  Y₀::Array{Float64, 2};
+  Y₀::Matrix{Float64};
   prod_function::Function = nothing,
   data::Tuple{Int, Array{Function, 2}, Array{Function, 2}} = nothing,
   ϵʳᵉˡ::Float64 = 1e-10,
@@ -383,7 +383,7 @@ function problemCauchy(
 
   N = size(Y₀, 1)
 
-  Yⁱⁿⁱᵗ = Vector{Float64}(N*N); fill!(Yⁱⁿⁱᵗ, 0)
+  Yⁱⁿⁱᵗ = Vector{Float64}(undef, N*N); fill!(Yⁱⁿⁱᵗ, 0)
   for i = 1:N, j = 1:N
     l = mvec(i, j, N); Yⁱⁿⁱᵗ[l] = Y₀[i, j]
   end
@@ -396,9 +396,9 @@ function problemCauchy(
   Nᵖᵒⁱⁿᵗˢ = size(Yʳᵉˢ, 1)
   Nˢᵒˡᵘᵗⁱᵒⁿˢ = size(Yʳᵉˢ, 2)
   if Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ N*N throw(ErrorException("Unexpected: Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ N×N: $Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ $N×$N ($(N*N))")) end
-  Y = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
+  Y = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
   for k = 1:Nᵖᵒⁱⁿᵗˢ
-    Yₖ = Array{Float64, 2}(N, N)
+    Yₖ = Matrix{Float64}(undef, N, N)
     for l = 1:N*N
       i, j = mpos(l, N)
       Yₖ[i, j] = Yʳᵉˢ[k, l]
