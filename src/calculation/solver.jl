@@ -7,7 +7,7 @@ using Nullables
 using PolynomialRoots
 
 import Dierckx
-import NumericalMath
+import NumericalIntegration
 
 function diabatize(
     Hₐ::Array{Function, 2},
@@ -149,7 +149,7 @@ function diabatizeWithPartialMatrices(
                             vR = ∂_∂R_arg[l¹:lᵉ]
                             ddr_sample = ∂_∂Rᴰᵈᵃᵗᵃ[l¹:lᵉ, k]
 
-                            It = NumericalMath.trapz(vR, ddr_sample)
+                            It = NumericalIntegration.integrate(vR, ddr_sample)
                             α = 4 / (Rᵉ - R¹)
                             β = - 2 / tan(2 * It - π)
                             γ = - (Rᵉ - R₀) * (R₀ - R¹) / (Rᵉ - R¹)
