@@ -185,9 +185,9 @@ function solverTransformationMatrixForAreas(
         if C.keep_initial_conditions
             if haskey(last_matrices, states)
                 S₀ˡᵒᶜ = last_matrices[states]
-                info("For |$states⟩ - Found initial condition matrix from the previous area:\n$S₀ˡᵒᶜ")
+                info("For |$(states)⟩ - Found initial condition matrix from the previous area:\n$S₀ˡᵒᶜ")
             else
-                #info("For |$states⟩ - Identity matrix is used:\n$S₀ˡᵒᶜ")
+                #info("For |$(states)⟩ - Identity matrix is used:\n$S₀ˡᵒᶜ")
                 if length(states) == 2
                     info("Detected a couple of neigbour solutions for the states |$states⟩.")
                     entries = collect(last_matrices)
