@@ -152,7 +152,7 @@ function solverTransformationMatrixForAreas(
         info("=====================")
         info("Making a new Cauchy problem for the areas:\n$bunch")
         states = bunch.states
-        info("The involved states: ⟨$states⟩")
+        info("The involved states: ⟨$(states)⟩")
         extra_lengths = Vector{Tuple{Float64, Float64}}()
         foreach(
             Aᵇ -> begin
