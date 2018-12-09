@@ -5,7 +5,7 @@ using Nullables
 
 import Dierckx
 
-type Data
+mutable struct Data
   Hₐ::Array{Function, 2}
   ∂_∂R::Array{Function, 2}
   itp_Hₐ::Array{Dierckx.Spline1D, 2}
