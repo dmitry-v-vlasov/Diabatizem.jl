@@ -123,7 +123,7 @@ function diabatizeWithPartialMatrices(
             continue
         end
         if !isempty(LZ[i, j]) && i < j
-            info("********** Smoothing areas for ⟨$i|∂/∂R|$j⟩ **********")
+            info("********** Smoothing areas for ⟨$(i)|∂/∂R|$(j)⟩ **********")
             for area ∈ LZ[i, j]
                 for sol ∈ Sl
                     info("----------")
@@ -138,7 +138,7 @@ function diabatizeWithPartialMatrices(
                         peaks = sol.peaks
                         peak_found_at_R₀ = findfirst(peak->abs(peak[1] - R₀) < 1e-1, peaks) > 0
                         if (i == states_ddr_ij[1] && j == states_ddr_ij[2]) && peak_found_at_R₀
-                            info("!!!! - START smoothing ⟨$i|∂/∂R|$j⟩ - !!!!")
+                            info("!!!! - START smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!")
                             @assert all(pair->pair[1] < pair[2], states_ddr)
                             states_ddr_f = filter(states -> states[2] - states[1] == 1, combinations(collect(s¹:sᵉ), 2))
 
@@ -171,18 +171,18 @@ function diabatizeWithPartialMatrices(
                                 ϵ_τ = 0.005
                                 ΔRˢᵐ = 2 * abs(τ₀) * √((1 - ϵ_τ) / ϵ_τ)
                                 R¹ˢ = R₀ - ΔRˢᵐ; Rᵉˢ = R₀ + ΔRˢᵐ
-                                info("Recalculated smoothing area: ⟨$i|∂/∂R|$j⟩ in interval [$R¹ˢ, $Rᵉˢ]")
+                                info("Recalculated smoothing area: ⟨$(i)|∂/∂R|$(j)⟩ in interval [$R¹ˢ, $Rᵉˢ]")
                                 l¹ˢ = findlast(R -> R < R¹ˢ, ∂_∂R_arg); lᵉˢ = findlast(R -> R <= Rᵉˢ, ∂_∂R_arg)
                                 vR = ∂_∂R_arg[l¹ˢ:lᵉˢ]
 
-                                info("For the coupling ⟨$i|∂/∂R|$j⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$i|∂/∂R|$j⟩dR = $It, [$R¹ˢ, $Rᵉˢ], ΔRˢᵐ=$ΔRˢᵐ")
+                                info("For the coupling ⟨$(i)|∂/∂R|$(j)⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$(i)|∂/∂R|$(j)⟩dR = $It, [$R¹ˢ, $Rᵉˢ], ΔRˢᵐ=$ΔRˢᵐ")
                                 τ(R) = τ₀ / ((R - R₀)^2 + 4 * τ₀ * τ₀)
                                 ddr_sample_new = τ.(vR)
                                 ∂_∂Rᴰᵈᵃᵗᵃ[l¹ˢ:lᵉˢ, k] = ddr_sample_new
-                                info("!!!! - END smoothing ⟨$i|∂/∂R|$j⟩ - !!!!")
+                                info("!!!! - END smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!")
                             else
-                                warn("Skipped smoothing of the slow oscilating curve ⟨$i|∂/∂R|$j⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$i|∂/∂R|$j⟩dR = $It, [$R¹, $Rᵉ]")
                                 warn("Spectrum: $(abs(ddr_spectrum))")
+                                warn("Skipped smoothing of the slow oscilating curve ⟨$(i)|∂/∂R|$(j)⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$(i)|∂/∂R|$(j)⟩dR = $It, [$R¹, $Rᵉ]")
                             end
                         end
                     end
@@ -198,7 +198,7 @@ function diabatizeWithPartialMatrices(
     # ix_cutting = round(Int, Lˢ/80)
     # ix_cutting = ix_cutting ≥ 1 ? ix_cutting : 1
     # if ix_cutting <= 2
-    #     warn("Possible rough smoothing with a single harmonic for ⟨$i|∂/∂R|$j⟩: [$ix_cutting, $(length(ddr_spectrum))]")
+    #     warn("Possible rough smoothing with a single harmonic for ⟨$(i)|∂/∂R|$(j)⟩: [$ix_cutting, $(length(ddr_spectrum))]")
     # else
     #     info("Harmonics cutted: [$ix_cutting, $(length(ddr_spectrum))]")
     # end
