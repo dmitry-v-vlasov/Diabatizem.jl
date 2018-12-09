@@ -43,6 +43,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
   for l = 1:L
     M_∂_∂Rᵍᵒᵒᵈ[l, :] = M_∂_∂R_vector_filtered[l]
   end
+  R_knots = M_∂_∂Rᵍᵒᵒᵈ[:, 1]
   # -----------
 
   area_config = nonadiabatic_config.nonadiabatic_areas[SINGLE_PEAK::NonadiabaticAreaTypes]
@@ -203,11 +204,24 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
             χₚₑₐₖ = abs(τₚₑₐₖ) > abs(yₛₘₐₗₗ) ? abs(abs(τₚₑₐₖ) - abs(yₛₘₐₗₗ)) : abs(τₚₑₐₖ)
 
             new_area = SinglePeakNonadiabaticArea()
-            new_area.states = darea.states
+            area_states = darea.states
+            @assert area_states[1] == i
+            @assert area_states[2] == j
+            new_area.states = area_states
             new_area.coordinate_∂_∂R = dpeak[1]
             new_area.value_∂_∂R = dpeak[2]
-            new_area.coordinate_from = darea.coordinate_from
-            new_area.coordinate_to = darea.coordinate_to
+
+            Rᶠʳᵒᵐ = darea.coordinate_from
+            Rᵗᵒ = darea.coordinate_to
+            Rᵏⁿᵒᵗˢ = filter(R -> Rᶠʳᵒᵐ ≤ R ≤ Rᵗᵒ, R_knots)
+            values_∂_∂R = M_∂_∂R[i, j].(Rᵏⁿᵒᵗˢ)
+            @assert typeof(Rᵏⁿᵒᵗˢ) == Vector{Float64}
+            @assert typeof(values_∂_∂R) == Vector{Float64}
+            new_area.coordinate_from = Rᶠʳᵒᵐ
+            new_area.coordinate_to = Rᵗᵒ
+            new_area.R_knots = Rᵏⁿᵒᵗˢ
+            new_area.values_∂_∂R = values_∂_∂R
+
             new_area.sign = darea.sign
             new_area.coordinate_potentials = 0.0
             new_area.deltaV_at_R0 = Hᴬ[j, j](R₀) - Hᴬ[i, i](R₀)
@@ -255,6 +269,7 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
 end
 
 function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{NonadiabaticArea}, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
+    Logging.configure(level=INFO)
   N = size(M_Hₐ, 1)
   M_Αˡᶻ = Array{Vector{SinglePeakNonadiabaticArea}, 2}(N, N)
   fill!(M_Αˡᶻ, Vector{SinglePeakNonadiabaticArea}())
@@ -282,21 +297,31 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{
       Rₘᵢₙᵢₘᵤₘ = Optim.minimizer(result)
 
       if abs(Rₘᵢₙᵢₘᵤₘ - R₀) <= ϵˡᶻ
+        Rᵏⁿᵒᵗˢ = Α.R_knots
+        values_∂_∂R = Α.values_∂_∂R
+        @assert length(Rᵏⁿᵒᵗˢ) == length(values_∂_∂R)
+
         Αˡᶻ = SinglePeakNonadiabaticArea()
         Αˡᶻ.states = (i, j)
         Αˡᶻ.coordinate_∂_∂R = R₀; Αˡᶻ.value_∂_∂R = τ
         Αˡᶻ.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
         Αˡᶻ.coordinate_from = Rₐ; Αˡᶻ.coordinate_to = Rᵦ
-        push!(M_Αˡᶻ[i, j], Αˡᶻ)
+        Αˡᶻ.R_knots = Rᵏⁿᵒᵗˢ
+        Αˡᶻ.values_∂_∂R = values_∂_∂R
         Αˡᶻ.sign = σ
+        push!(M_Αˡᶻ[i, j], Αˡᶻ)
+        info("New LZ area: $Αˡᶻ")
 
         Αˡᶻ_inv = SinglePeakNonadiabaticArea()
         Αˡᶻ_inv.states = (j, i)
         Αˡᶻ_inv.coordinate_∂_∂R = R₀; Αˡᶻ_inv.value_∂_∂R = -τ
         Αˡᶻ_inv.coordinate_potentials = Rₘᵢₙᵢₘᵤₘ
         Αˡᶻ_inv.coordinate_from = Rₐ; Αˡᶻ_inv.coordinate_to = Rᵦ
+        Αˡᶻ_inv.R_knots = Rᵏⁿᵒᵗˢ
+        Αˡᶻ_inv.values_∂_∂R = -values_∂_∂R
         Αˡᶻ_inv.sign = -σ
         push!(M_Αˡᶻ[j, i], Αˡᶻ_inv)
+        info("New LZ area: $Αˡᶻ_inv")
       else
         # nothing
       end
@@ -317,9 +342,10 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
     for i = 1:N, j = 1:N
         lz_ij = lz_areas[i, j]
         if isempty(lz_ij)
-            info("Skipping the empty list of areas for ⟨$i|∂/∂R|$j⟩>")
+            info("Skipping the empty list of areas for ⟨$i|∂/∂R|$j⟩")
         else
-            info("Filtering the areas for ⟨$i|∂/∂R|$j⟩>: $lz_ij")
+            info("Filtering the areas for ⟨$i|∂/∂R|$j⟩...")
+            info("Area: $lz_ij")
             lz_ij_filtered = filter(
                 Αˡᶻ -> begin
                     R₀ = Αˡᶻ.coordinate_∂_∂R
@@ -328,17 +354,17 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
                             a_i = i < j ? s_area.states[1] : s_area.states[2];
                             a_j = i < j ? s_area.states[2] : s_area.states[1];
                             R₀ₛ = s_area.coordinate
-                            info("Cheking: a_i = $a_i, a_j = $a_j, i = $i, j = $j, |R₀ - R₀ₛ| = $(abs(R₀ - R₀ₛ))")
+                            #info("Cheking: a_i = $a_i, a_j = $a_j, i = $i, j = $j, |R₀ - R₀ₛ| = $(abs(R₀ - R₀ₛ))")
                             return a_i == i && a_j == j && abs(R₀ - R₀ₛ) <= ϵᴿ
                         end,
                         selected_areas)
                     return ix_s_area > 0
                 end,
                 lz_ij)
-            info("Size of filtered areas for for ⟨$i|∂/∂R|$j⟩> - $(length)")
+            info("Size of filtered areas for for ⟨$i|∂/∂R|$j⟩ - $(length)")
             lz_areas_filtered[i, j] = lz_ij_filtered
         end
     end
     info("==== End of Landau-Zener Areas Filtering =====")
-    return lz_areas_filtered
+    return lz_areas_filtered;
 end

@@ -1,11 +1,13 @@
 using Roots
-using Optim
 using Logging
+
+import Optim
+using LsqFit
 
 """
 Make a simple fitting of a given single peak area with
 the Lorenz curve which is defined in the Landau-Zener model as
-<1|∂/∂R|2> = τ₀ / ((R - R₀)² + 4τ₀²)
+⟨1|∂/∂R|2⟩ = τ₀ / ((R - R₀)² + 4τ₀²)
 Reference:
 "СЕЧЕНИЕ ВОЗБУЖДЕНИЯ И МОДЕЛЬ ЛАНДАУ-ЗИНЕРА"
 Беляев Андрей Константинович
@@ -14,6 +16,7 @@ Reference:
 http://cyberleninka.ru/article/n/sechenie-vozbuzhdeniya-i-model-landau-zinera
 """
 function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}, 2})
+    Logging.configure(level=INFO)
   N = size(areas, 1)
   M_Αˡᶻ = Array{Array{LandauZenerArea, 1}, 2}(N, N)
   fill!(M_Αˡᶻ, Array{LandauZenerArea, 1}())
@@ -24,6 +27,30 @@ function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}
       Rₐ = Α.coordinate_from; Rᵦ = Α.coordinate_to
       R₀ = Α.coordinate_∂_∂R
       τₕ₀ = Α.value_∂_∂R; τ₀ = 1/(4τₕ₀)
+
+      info("Curve fitting for\n$Α...")
+
+      model(R::Vector{Float64}, p::Vector{Float64}) = p[2] ./ ((R - p[1]).^2 + 4 * (p[2])^2)
+     #  jacobian_model(R::Vector{Float64}, p::Vector{Float64}) = begin
+     #    J = Array{Float64}(length(R),length(p))
+     #    J[:,1] = 2*p[2]*(R - p[1])./((R - p[1]).^2 + 4 * (p[2])^2).^2    #dmodel/dp[1]
+     #    J[:,2] = ((R - p[1]).^2 - 4 * (p[2])^2)./((R - p[1]).^2 + 4 * (p[2])^2).^2  #dmodel/dp[2]
+     #    return J
+     # end
+
+      Rdata = Α.R_knots
+      Fdata = Α.values_∂_∂R
+      p₀ = [R₀, τ₀]
+      info("Initial parameters: R₀ = $(p₀[1]), τ₀ = $(p₀[2])")
+      fit = LsqFit.curve_fit(model, Rdata, Fdata, p₀; maxIter = 10000)
+      pₑ = fit.param
+      info("Best fit parameters: R₀ = $(pₑ[1]), τ₀ = $(pₑ[2])")
+      R₀ = pₑ[1]; τ₀ = pₑ[2]
+
+      # if i == 8 && j == 9
+      #     τ₀ = 1/(4*12275)
+      #     warn("Hacked $i, $j: τ₀ = $τ₀")
+      # end
 
       Αˡᶻ = LandauZenerArea(Α.states, R₀, τ₀, Rₐ, Rᵦ)
       push!(M_Αˡᶻ[i, j], Αˡᶻ)

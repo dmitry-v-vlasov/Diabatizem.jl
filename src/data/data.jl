@@ -18,21 +18,24 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
     Uᴰᵈᵃᵗᵃ::Array{Float64, 2},
     Hᴰᵈᵃᵗᵃ::Array{Float64, 2},
     ∂_∂Rᴰᵈᵃᵗᵃ::Array{Float64, 2},
+    ∂_∂Rᵐᵈᵃᵗᵃ::Array{Float64, 2},
+    ∂_∂R_arg::Vector{Float64},
     ∂²_∂R²ᴰᵈᵃᵗᵃ::Array{Float64, 2},
     ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Array{Float64, 2},
+    Sl::Vector{LocalSolution},
     out::OutputPaths)
   Logging.configure(level=INFO)
 
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Uᴰᵈᵃᵗᵃ, 1)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Hᴰᵈᵃᵗᵃ, 1)
-  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂_∂Rᴰᵈᵃᵗᵃ, 1)
-  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 1)
-  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 1)
+  @assert length(∂_∂R_arg) == size(∂_∂Rᴰᵈᵃᵗᵃ, 1)
+  @assert length(∂_∂R_arg) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 1)
+  @assert length(∂_∂R_arg) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 1)
 
   @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(Uᴰᵈᵃᵗᵃ, 2)*(size(Uᴰᵈᵃᵗᵃ, 2) - 1)/2
-  @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂_∂Rᴰᵈᵃᵗᵃ, 2)
-  @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 2)
-  @assert size(Uᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 2)
+  #@assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂_∂Rᴰᵈᵃᵗᵃ, 2)
+  #@assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 2)
+  #@assert size(Uᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 2)
 
   L = length(Rᵖᵒⁱⁿᵗˢ)
   N = size(Uᴰᵈᵃᵗᵃ, 2)
@@ -44,11 +47,12 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   # -----------
   Hᵒᶠᶠᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, Hᴰᵈᵃᵗᵃ, :symmetric, "H", N)
   # -----------
-  ∂_∂R = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
+  ∂_∂R = makeMatrixElementTable(∂_∂R_arg, ∂_∂Rᴰᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
+  ∂_∂Rᵐ = makeMatrixElementTable(∂_∂R_arg, ∂_∂Rᵐᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
   # -----------
-  ∂²_∂R² = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂²_∂R²ᴰᵈᵃᵗᵃ, :symmetric, "d2/dR2", N)
+  ∂²_∂R² = makeMatrixElementTable(∂_∂R_arg, ∂²_∂R²ᴰᵈᵃᵗᵃ, :symmetric, "d2/dR2", N)
   # -----------
-  ∂²_∂R²ᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, :diagonal, "d2/dR2", N)
+  ∂²_∂R²ᵈⁱᵃᵍ = makeMatrixElementTable(∂_∂R_arg, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, :diagonal, "d2/dR2", N)
   # -----------
 
   # -----------
@@ -62,10 +66,20 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   saveMatrixElementTable(Hᵒᶠᶠᵈⁱᵃᵍ, out.file_hamiltonian_diabatic)
   info("Saving the transformation matrix table to '$(out.file_coupling_∂_∂R_diabatic)'")
   saveMatrixElementTable(∂_∂R, out.file_coupling_∂_∂R_diabatic)
+  saveMatrixElementTable(∂_∂Rᵐ, "$(out.file_coupling_∂_∂R_diabatic)-model.dsv")
   info("Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic)'")
   saveMatrixElementTable(∂²_∂R², out.file_coupling_∂²_∂R²_diabatic)
   info("Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic_diag)'")
   saveMatrixElementTable(∂²_∂R²ᵈⁱᵃᵍ, out.file_coupling_∂²_∂R²_diabatic_diag)
+  info("Saving the partial transformation matrices...")
+  for sol ∈ Sl
+      sol_file_name = "$(out.file_transformation_matrix)-$(join(sol.states, "_")).dsv"
+      info("Saving the solution]\n$sol to\nthe file $sol_file_name")
+      points = sol.points; sol_data = matl2matdata(sol.S)
+      sol_table = makeMatrixElementTable(points, sol_data, :general, "C", N)
+      saveMatrixElementTable(sol_table, sol_file_name)
+      info("Saving to $sol_file_name... done.")
+  end
   info("Done")
   # -----------
 end

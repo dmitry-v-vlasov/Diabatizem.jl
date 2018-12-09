@@ -2,8 +2,217 @@ using Calculus
 using Sundials
 using Logging
 using ProgressMeter
+using Combinatorics
 
 import Dierckx
+import NumericalMath
+import CubicEquation
+
+function diabatize(
+    Hₐ::Array{Function, 2},
+    ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, ∂_∂R_arg::Vector{Float64},
+    solutions::Vector{LocalSolution}, C::DiabatizationSettings, LZ::Array{Array{LandauZenerArea, 1}, 2})
+    Logging.configure(level=INFO)
+    info("**************************************************")
+    info("Diabatizing...")
+    R = unique(sort(collect(Base.flatten(map(solution->solution.points, solutions)))))
+    info("Derived grid: [$(R[1]) ... $(R[end])] ($(length(R)))")
+    @assert issorted(R)
+    steps = R[2:end] - R[1:end-1]
+    h = minimum(abs(steps)); H = maximum(abs(steps))
+    info("Diabatizing in the interval [$(R[1]), $(R[end])] with hₘᵢₙ=$h, hₘₐₓ=$H")
+    Rᶜ = clearGrid(R, 1e-10)
+    empty!(steps)
+    steps = Rᶜ[2:end] - Rᶜ[1:end-1]
+    h = minimum(abs(steps)); H = maximum(abs(steps))
+    info("Cleared grid [$(Rᶜ[1]), $(Rᶜ[end])] ($(length(Rᶜ))) with hₘᵢₙ=$h, hₘₐₓ=$H")
+    info("Making partial matrices")
+    Sᶠ = Vector{Array{Function, 2}}()
+    Sᶠˢᵖ = Vector{Array{Dierckx.Spline1D, 2}}()
+    for solution ∈ solutions
+        Sᶠⁱ = matl2matfsl(solution.points, solution.S)
+        push!(Sᶠ, Sᶠⁱ[1])
+        push!(Sᶠˢᵖ, Sᶠⁱ[2])
+    end
+    info("Number of partial transformation matrices length - $(length(Sᶠ))")
+    Rᶜ, Sᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, ∂_∂Rᵐ = diabatizeWithPartialMatrices(Hₐ, ∂_∂R, ∂_∂Rᵐᵒᵈᵉˡ, ∂_∂R_arg, Rᶜ, Sᶠ, Sᶠˢᵖ, solutions, LZ)
+    info("**************************************************")
+    return Rᶜ, Sᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, ∂_∂Rᵐ
+end
+
+function diabatizeWithPartialMatrices(
+    Hₐ::Array{Function, 2},
+    ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, ∂_∂R_arg::Vector{Float64},
+    Rᶜ::Vector{Float64}, Sᶠ::Vector{Array{Function, 2}}, Sᶠˢᵖ::Vector{Array{Dierckx.Spline1D, 2}},
+    Sl::Vector{LocalSolution}, LZ::Array{Array{LandauZenerArea, 1}, 2})
+    Nˡ = length(Sᶠ)
+    N = size(Sᶠ[1], 1)
+    @assert N == size(Hₐ, 1)
+    # ----
+    info("Full transformation matrix computation...")
+    Sᵛ = Vector{Array{Float64, 2}}()
+    for R ∈ Rᶜ
+        S = eye(N, N)
+        for i = 1:Nˡ
+            Sⁱ = matf2mat(R, Sᶠ[i])
+            S = S * Sⁱ
+        end
+        push!(Sᵛ, S)
+    end
+    info("Done.")
+    # ----
+    Sᵛᶠ, Sᵛᶠˢᵖ = matl2matfsl(Rᶜ, Sᵛ)
+    # ----
+    info("Transforming...")
+    Hᵈ = Vector{Array{Float64, 2}}()
+    ∂_∂Rᵈ = Vector{Array{Float64, 2}}()
+    ∂_∂Rᵐ = Vector{Array{Float64, 2}}()
+    Sᵛᵉᶜ = Vector{Array{Float64, 2}}()
+
+    interval_states = Dict{Vector{Int}, Tuple{Float64, Float64}}()
+    foreach(s -> begin interval_states[s.states] = s.interval end, Sl)
+    info("Interval states: $interval_states")
+    info("Making new potentials...")
+    for R ∈ Rᶜ
+        S = matf2mat(R, Sᵛᶠ)
+        S⁻¹ = S'
+
+        Hᴬ = matf2mat(R, Hₐ)
+        Hᴰ = S⁻¹*Hᴬ*S
+
+        @assert typeof(Hᴰ) == Array{Float64, 2}
+        @assert size(Hᴰ, 1) == N
+
+        push!(Hᵈ, Hᴰ)
+        push!(Sᵛᵉᶜ, S)
+    end
+
+    info("Making new ⟨·|∂/∂R|·⟩...")
+    for R ∈ ∂_∂R_arg
+        S = matf2mat(R, Sᵛᶠ)
+        ∇S = Dierckx.derivative.(Sᵛᶠˢᵖ, R; nu=1)
+        S⁻¹ = S'
+
+        ∂_∂Rᴬ = matf2mat(R, ∂_∂R); ∂_∂Rᴹ = matf2mat(R, ∂_∂Rᵐᵒᵈᵉˡ)
+        ∂_∂Rᴰ = S⁻¹ * ∂_∂Rᴬ * S + S⁻¹ * ∇S
+
+        state_list = map(is -> is[1], filter(is -> is[2][1] ≤ R ≤ is[2][2], collect(interval_states)))
+        for states ∈ state_list
+            @assert(issorted(states), "The states $states are not sorted.")
+            s¹ = states[1]; sᵉ = states[end]
+            #∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = S⁻¹[s¹:sᵉ, s¹:sᵉ] * (∂_∂Rᴬ[s¹:sᵉ, s¹:sᵉ] - ∂_∂Rᴹ[s¹:sᵉ, s¹:sᵉ]) * S[s¹:sᵉ, s¹:sᵉ]
+            ∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = zeros(sᵉ-s¹+1, sᵉ-s¹+1)
+            ∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = ∂_∂Rᴬ[s¹:sᵉ, s¹:sᵉ] - ∂_∂Rᴹ[s¹:sᵉ, s¹:sᵉ]
+        end
+
+        @assert typeof(∂_∂Rᴰ) == Array{Float64, 2}
+        push!(∂_∂Rᵈ, ∂_∂Rᴰ)
+        push!(∂_∂Rᵐ, ∂_∂Rᴹ)
+    end
+
+    # sols = Dict{Vector{Int}, LocalSolution}()
+    # foreach(s -> begin sols[s.states] = s end, Sl)
+    ∂_∂Rᴰᵈᵃᵗᵃ = matl2matlupperx(∂_∂Rᵈ);
+    N_lz = size(LZ, 1)
+    @assert size(LZ, 1) == size(LZ, 2)
+    @assert N_lz == N
+    info("=================================Smoothing ⟨i|∂/∂R|j⟩=====================================")
+    for i = 1:N_lz, j = 1:N_lz
+        if i >= j
+            continue
+        end
+        if !isempty(LZ[i, j]) && i < j
+            info("********** Smoothing areas for ⟨$i|∂/∂R|$j⟩ **********")
+            for area ∈ LZ[i, j]
+                for sol ∈ Sl
+                    info("----------")
+                    states = sol.states
+                    s¹ = minimum(states); sᵉ = maximum(states)
+                    states_ddr = combinations(collect(s¹:sᵉ), 2)
+                    for states_ddr_ij ∈ states_ddr
+                        R₀ = area.R₀
+                        R¹ = area.Rₐ; Rᵉ = area.Rᵦ
+                        ΔR = abs(Rᵉ - R¹)
+                        R¹ = R¹ - ΔR; Rᵉ = Rᵉ + ΔR;
+                        peaks = sol.peaks
+                        peak_found_at_R₀ = findfirst(peak->abs(peak[1] - R₀) < 1e-1, peaks) > 0
+                        if (i == states_ddr_ij[1] && j == states_ddr_ij[2]) && peak_found_at_R₀
+                            info("!!!! - START smoothing ⟨$i|∂/∂R|$j⟩ - !!!!")
+                            @assert all(pair->pair[1] < pair[2], states_ddr)
+                            states_ddr_f = filter(states -> states[2] - states[1] == 1, combinations(collect(s¹:sᵉ), 2))
+
+                            info("Smoothing area: $(LZ[i, j]) in interval [$R¹, $Rᵉ]")
+                            l¹ = findlast(R -> R < R¹, ∂_∂R_arg); lᵉ = findlast(R -> R <= Rᵉ, ∂_∂R_arg)
+                            info("Curve smoothing for the solution:\n$sol\nin interval [$R¹, $Rᵉ] for ⟨$i|∂/∂R|$j⟩...")
+                            k = dataColumnOfSymetricMatrix(i, j, N)
+                            vR = ∂_∂R_arg[l¹:lᵉ]
+                            ddr_sample = ∂_∂Rᴰᵈᵃᵗᵃ[l¹:lᵉ, k]
+
+                            It = NumericalMath.trapz(vR, ddr_sample)
+                            α = 4 / (Rᵉ - R¹)
+                            β = - 2 / tan(2 * It - π)
+                            γ = - (Rᵉ - R₀) * (R₀ - R¹) / (Rᵉ - R¹)
+                            @assert β^2 - 4 * α * γ > 0
+                            solver = CubicEquation.Solver()
+                            τ₁₂ = solver(α, β, γ)
+                            info("Roots for [$R¹, - $R₀ - , $Rᵉ]: $(τ₁₂)")
+                            abs_max = findmax(abs(τ₁₂))
+                            τ₀ = τ₁₂[abs_max[2]]
+
+                            ddr_spectrum = fft(ddr_sample)
+                            Lˢ = length(ddr_spectrum)
+                            Lᵉᵈᵍᵉ = floor(Int, Lˢ / 4)
+                            ΔLˢ = abs(Lˢ - Lᵉᵈᵍᵉ)
+                            high_f = filter(f -> abs(f) > 5.0, abs(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
+                            mean_f = mean(abs(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
+                            if length(high_f) / ΔLˢ > 0.4 && mean_f > 5.0
+                                ϵ_τ = 0.005
+                                ΔRˢᵐ = 2 * abs(τ₀) * √((1 - ϵ_τ) / ϵ_τ)
+                                R¹ˢ = R₀ - ΔRˢᵐ; Rᵉˢ = R₀ + ΔRˢᵐ
+                                info("Recalculated smoothing area: ⟨$i|∂/∂R|$j⟩ in interval [$R¹ˢ, $Rᵉˢ]")
+                                l¹ˢ = findlast(R -> R < R¹ˢ, ∂_∂R_arg); lᵉˢ = findlast(R -> R <= Rᵉˢ, ∂_∂R_arg)
+                                vR = ∂_∂R_arg[l¹ˢ:lᵉˢ]
+
+                                info("For the coupling ⟨$i|∂/∂R|$j⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$i|∂/∂R|$j⟩dR = $It, [$R¹ˢ, $Rᵉˢ], ΔRˢᵐ=$ΔRˢᵐ")
+                                τ(R) = τ₀ / ((R - R₀)^2 + 4 * τ₀ * τ₀)
+                                ddr_sample_new = τ.(vR)
+                                ∂_∂Rᴰᵈᵃᵗᵃ[l¹ˢ:lᵉˢ, k] = ddr_sample_new
+                                info("!!!! - END smoothing ⟨$i|∂/∂R|$j⟩ - !!!!")
+                            else
+                                warn("Skipped smoothing of the slow oscilating curve ⟨$i|∂/∂R|$j⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$i|∂/∂R|$j⟩dR = $It, [$R¹, $Rᵉ]")
+                                warn("Spectrum: $(abs(ddr_spectrum))")
+                            end
+                        end
+                    end
+                end
+            end
+            info("******************************************************")
+        end
+    end
+    info("==========================================================================================")
+
+    # ddr_spectrum = fft(ddr_sample)
+    # Lˢ = length(ddr_spectrum)
+    # ix_cutting = round(Int, Lˢ/80)
+    # ix_cutting = ix_cutting ≥ 1 ? ix_cutting : 1
+    # if ix_cutting <= 2
+    #     warn("Possible rough smoothing with a single harmonic for ⟨$i|∂/∂R|$j⟩: [$ix_cutting, $(length(ddr_spectrum))]")
+    # else
+    #     info("Harmonics cutted: [$ix_cutting, $(length(ddr_spectrum))]")
+    # end
+    # ddr_spectrum[ix_cutting:end] = 0.0
+    # ddr_sample = real(ifft(ddr_spectrum))
+    # ∂_∂Rᴰᵈᵃᵗᵃ[l¹:lᵉ, k] = ddr_sample
+
+    smoothed_∂_∂Rᵈ = matlupperx_ddr2matl(∂_∂Rᴰᵈᵃᵗᵃ)
+    @assert size(∂_∂Rᵈ, 1) == size(smoothed_∂_∂Rᵈ, 1)
+    @assert size(∂_∂Rᵈ, 2) == size(smoothed_∂_∂Rᵈ, 2)
+    info("Smoothed matrix ∂_∂Rᵈ length = $(length(smoothed_∂_∂Rᵈ))")
+    info("==========")
+
+    info("Done.")
+    return Rᶜ, Sᵛᵉᶜ, Hᵈ, smoothed_∂_∂Rᵈ, ∂_∂Rᵐ
+end
 
 function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
   Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Array{Float64, 2}}, use_prev_S_from::Nullable{Float64})
@@ -174,84 +383,4 @@ function transformationMatrix(Hₐ::Array{Function, 2},
   )
 
   return Rᵖᵒⁱⁿᵗˢ[end:-1:1], S[end:-1:1], Sᵈᵃᵗᵃ[end:-1:1, 1:1:end]
-end
-
-function error_S(S::Vector{Array{Float64, 2}})
-  L = size(S, 1)
-  N = size(S[1], 1)
-  ϵ_S = Vector{Array{Float64, 2}}(L)
-  for l = 1:L
-    ϵ_S[l] = S[l]'*S[l]
-  end
-  ϵ_Sᵈᵃᵗᵃ = matl2mdata(ϵ_S)
-  return ϵ_S, ϵ_Sᵈᵃᵗᵃ
-end
-
-let
-  global diabatizationODE_function
-  S = Array{Float64, 2}(); dS_dR = Array{Float64, 2}()
-  ∂_∂R = Array{Float64, 2}(); ∂_∂Rᵐᵒᵈᵉˡ = Array{Float64, 2}()
-
-  """
-  We do not aspite to have an optimal implementation and
-  we prefer to have this function with vivid matrix formulae.
-  """
-  function diabatizationODE_function(R::Float64, S_v::Vector{Float64}, dS_dR_v::Vector{Float64}, data::Tuple{Int, Array{Function, 2}, Array{Function, 2}})
-    F_∂_∂R = data[2]; F_∂_∂Rᵐᵒᵈᵉˡ = data[3]
-
-    N = data[1]
-    if size(S, 1) < N || size(dS_dR, 1) < N || size(∂_∂R, 1) < N || size(∂_∂Rᵐᵒᵈᵉˡ, 1) < N
-      S = Array{Float64, 2}(N, N); dS_dR = Array{Float64, 2}(N, N)
-      ∂_∂R = Array{Float64, 2}(N, N); ∂_∂Rᵐᵒᵈᵉˡ = Array{Float64, 2}(N, N)
-    end
-
-    vec2mat!(S_v, S)
-    for i = 1:N, j = 1:N
-      ∂_∂R[i, j] = F_∂_∂R[i, j](R)
-      ∂_∂Rᵐᵒᵈᵉˡ[i, j] = F_∂_∂Rᵐᵒᵈᵉˡ[i, j](R)
-    end
-
-    #dS_dR = (S*∂_∂R - ∂_∂R*S) - S*∂_∂Rᵐᵒᵈᵉˡ
-    dS_dR = -∂_∂Rᵐᵒᵈᵉˡ*S
-
-    mat2vec!(dS_dR, dS_dR_v)
-
-    return Sundials.CV_SUCCESS
-  end
-end
-
-function problemCauchy(
-  Xᵖᵒⁱⁿᵗˢ::Vector{Float64},
-  Y₀::Array{Float64, 2};
-  prod_function::Function = nothing,
-  data::Tuple{Int, Array{Function, 2}, Array{Function, 2}} = nothing,
-  ϵʳᵉˡ::Float64 = 1e-3,
-  ϵᵃᵇˢ::Float64 = 1e-6)
-
-  N = size(Y₀, 1)
-
-  Yⁱⁿⁱᵗ = Vector{Float64}(N*N); fill!(Yⁱⁿⁱᵗ, 0)
-  for i = 1:N, j = 1:N
-    l = mvec(i, j, N); Yⁱⁿⁱᵗ[l] = Y₀[i, j]
-  end
-
-  Yʳᵉˢ = Sundials.cvode(
-    (Xᵖ, Yᵛ, dYᵛ_dx) -> prod_function(Xᵖ, Yᵛ, dYᵛ_dx, data),
-    Yⁱⁿⁱᵗ, Xᵖᵒⁱⁿᵗˢ, nothing;
-    integrator = :BDF, reltol = ϵʳᵉˡ, abstol = ϵᵃᵇˢ)
-
-  Nᵖᵒⁱⁿᵗˢ = size(Yʳᵉˢ, 1)
-  Nˢᵒˡᵘᵗⁱᵒⁿˢ = size(Yʳᵉˢ, 2)
-  if Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ N*N throw(ErrorException("Unexpected: Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ N×N: $Nˢᵒˡᵘᵗⁱᵒⁿˢ ≠ $N×$N ($(N*N))")) end
-  Y = Vector{Array{Float64, 2}}(Nᵖᵒⁱⁿᵗˢ)
-  for k = 1:Nᵖᵒⁱⁿᵗˢ
-    Yₖ = Array{Float64, 2}(N, N)
-    for l = 1:N*N
-      i, j = mpos(l, N)
-      Yₖ[i, j] = Yʳᵉˢ[k, l]
-    end
-    Y[k] = Yₖ
-  end
-
-  return Y, Yʳᵉˢ
 end

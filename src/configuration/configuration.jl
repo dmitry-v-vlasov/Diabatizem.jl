@@ -86,13 +86,17 @@ end
 type SelectedDiabatizationArea
     coordinate::Float64
     states::Tuple{Int, Int}
+    extra_length::Tuple{Float64, Float64}
+    bunch_exclude::Bool
 end
 
 type DiabatizationSettings
   areas::Vector{SelectedDiabatizationArea}
+  keep_initial_conditions::Bool
   coordinate_start::Float64
   coordinate_step::Tuple{Float64, Float64}
   coordinate_stop::Float64
+  area_closeness::Float64
   use_last_transformation_matrix_from::Nullable{Float64}
 end
 
@@ -227,17 +231,20 @@ function loadDiabatizationSettings(js)
   for area in js_selected_areas
       state1 = area["states"][1]
       state2 = area["states"][2]
+      extra_length = area["extra-length"]
       diab_area = SelectedDiabatizationArea(
-        area["coordinate"], (state1, state2))
+        area["coordinate"], (state1, state2), extra_length, area["bunch-exclude"])
       push!(selected_areas, diab_area)
   end
   sort!(selected_areas, by = diab_area -> diab_area.coordinate)
 
   return DiabatizationSettings(
     selected_areas,
+    js["keep-initial-conditions"],
     js["coordinate-start"],
     (step_min, step_max),
     js["coordinate-stop"],
+    js["area-closeness"],
     use_prev_expression
   )
 end

@@ -5,8 +5,52 @@ using DataFrames
 
 import Dierckx
 
+import CubicEquation
+
 #const tanˡⁱᵐ = 57.28996163075943 # tan(89°)
 const tanˡⁱᵐ = 5.671281819617709 # tan(80°)
+const degree = π / 180.0
+const inv_ϕ₀ = (1 - 1 / golden)
+const ϕ₀ = 1/golden
+
+function clearGrid(R::Vector{Float64}, ϵᴿ)
+    Rᵛ = Vector{Float64}()
+    Rˡ = R[1]
+    push!(Rᵛ, Rˡ)
+    for Rⁱ ∈ R[2:end]
+        if abs(Rⁱ - Rˡ) > ϵᴿ
+            Rˡ = Rⁱ
+            push!(Rᵛ, Rⁱ)
+        else
+            # skip
+        end
+    end
+    return Rᵛ
+end
+
+function sigmoid_of_name(f1::Function, f2::Function, x₀, α, name::AbstractString)
+  return x -> begin
+    Logging.configure(level=INFO)
+    sf = (1 - sigmoid(x, x₀, α))*f1(x) + sigmoid(x, x₀, α)*f2(x)
+    if sf === NaN || sf === NaN64 || sf === NaN32 || sf === NaN16
+      error("SIGMOID NaN: x=$x, x₀=$x₀, α=$α, f1(x)=$(f1(x)), f2(x)=$(f2(x)), σ(x)=$(sigmoid(x, x₀, α)), name=$name")
+    end
+    return sf
+  end
+end
+const sigmoid = (x, x₀, α) -> 1/(1+exp(-(x - x₀)/α))
+
+function mat2string(M::Array{Float64, 2})
+    io = IOBuffer()
+    Base.showarray(io, M, false)
+    return takebuf_string(io)
+end
+
+function mat2string(M::Array{Function, 2})
+    io = IOBuffer()
+    Base.showarray(io, M, false)
+    return takebuf_string(io)
+end
 
 function load_data(file::AbstractString; header=true)
   readtable(
@@ -110,6 +154,17 @@ function dataSizeOfSymetricMatrix(N::Int)
   return convert(Int, N*(N - 1) / 2)
 end
 
+function sizeOfSymmetricUpperMatrix(Nˡ::Int)
+    Logging.configure(level=INFO)
+    solver = CubicEquation.Solver()
+    roots = solver(0.5, -0.5, -Nˡ)
+    info("Roots for Nˡ=$Nˡ: $roots")
+    @assert all(isreal, roots)
+    N = maximum(filter(x -> x > 0, round(Int, real(roots))))
+    L = dataSizeOfSymetricMatrix(N)
+    @assert(L == Nˡ, "$L≠$Nˡ")
+    return N
+end
 
 """
 Convert vector element number to a pair of N×N matrix indices.
@@ -129,7 +184,7 @@ end
 function vec2mat!(v::Vector{Float64}, m::Array{Float64, 2})
   N = size(m, 1)
   @assert N == size(m, 2)
-  @assert N*N == size(v, 1)
+  @assert(N*N == size(v, 1), "With N = $N: $(N*N) ≠ $(size(v, 1)).")
   for l = 1:N*N
     i, j = mpos(l, N)
     m[i, j] = v[l]
@@ -189,6 +244,31 @@ function matl2matlupperx(Mˡ::Vector{Array{Float64, 2}})
   return Mˡᵈⁱᵃᵍ
 end
 
+function matlupperx_ddr2matl(M::Array{Float64, 2})
+    Logging.configure(level=INFO)
+    L = size(M, 1)
+    L_N = size(M, 2)
+    N = sizeOfSymmetricUpperMatrix(L_N)
+    L_N_check = dataSizeOfSymetricMatrix(N)
+    @assert L_N_check == L_N
+    Mˡ = Vector{Array{Float64, 2}}(L)
+    info("N=$N, L=$L, L_N=$L_N")
+    for l = 1:L
+        M_l = Array{Float64, 2}(N, N)
+        for i = 1:N, j = 1:N
+            if i == j
+                M_l[i, i] = 0.0
+            elseif i < j
+                k = dataColumnOfSymetricMatrix(i, j, N)
+                M_l[i, j] = M[l, k]
+                M_l[j, i] = -M[l, k]
+            end
+        end
+        Mˡ[l] = M_l
+    end
+    return Mˡ
+end
+
 function matl2matdata(Mˡ::Vector{Array{Float64, 2}})
   N = size(Mˡ[1], 1)
   L = size(Mˡ, 1); Nᴸ = N*N
@@ -233,7 +313,7 @@ function matf2mat(x::Float64, Mᶠ::Array{Function, 2})
   return M
 end
 
-function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Array{Float64, 2}})
+function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Array{Float64, 2}}; behaviour::AbstractString="extrapolate")
   L = length(X)
   N = size(Mˡ[1], 1)
   Mᵈᵃᵗᵃ = matl2mdata(Mˡ)
@@ -242,7 +322,8 @@ function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Array{Float64, 2}})
   for k = 1:N*N
     Y = Mᵈᵃᵗᵃ[:, k]
     i, j = mpos(k, N)
-    spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=1, bc="extrapolate", s=0.0)
+    @assert(length(X) == length(Y), "length(X) == length(Y), $(length(X)) ≠ $(length(Y))")
+    spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=1, bc=behaviour, s=0.0)
     Mᶠ[i, j] = R -> Dierckx.evaluate(spl, R)
     M_spline[i, j] = spl
   end
