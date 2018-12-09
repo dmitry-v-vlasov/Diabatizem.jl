@@ -10,6 +10,7 @@ import Dierckx
 #const tanˡⁱᵐ = 57.28996163075943 # tan(89°)
 const tanˡⁱᵐ = 5.671281819617709 # tan(80°)
 const degree = π / 180.0
+const golden = Base.MathConstants.golden
 const inv_ϕ₀ = (1 - 1 / golden)
 const ϕ₀ = 1/golden
 
