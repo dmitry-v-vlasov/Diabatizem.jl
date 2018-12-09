@@ -3,9 +3,9 @@ using Logging
 using ProgressMeter
 using DataFrames
 
-import Dierckx
+using PolynomialRoots
 
-import CubicEquation
+import Dierckx
 
 #const tanˡⁱᵐ = 57.28996163075943 # tan(89°)
 const tanˡⁱᵐ = 5.671281819617709 # tan(80°)
@@ -169,8 +169,7 @@ end
 
 function sizeOfSymmetricUpperMatrix(Nˡ::Int)
     Logging.configure(level=INFO)
-    solver = CubicEquation.Solver()
-    roots = solver(0.5, -0.5, -Nˡ)
+    roots = real(roots([-Nˡ, -0.5, 0.5]))
     info("Roots for Nˡ=$Nˡ: $roots")
     @assert all(isreal, roots)
     N = maximum(filter(x -> x > 0, round(Int, real(roots))))
