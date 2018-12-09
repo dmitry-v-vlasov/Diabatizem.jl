@@ -1,7 +1,6 @@
 using Calculus
 using Optim
 using Formatting
-using Logging
 
 mutable struct DirtyNonadiabaticArea <: NonadiabaticArea
   states::Tuple{Int, Int}
@@ -23,7 +22,6 @@ mutable struct DirtyNonadiabaticArea <: NonadiabaticArea
 end
 
 function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃᵗᵃ::Matrix{Float64}, Hᴬ::Array{Function, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
-  Logging.configure(level=INFO)
 
   Rₛₜₐᵣₜ = nonadiabatic_config.coordinate_start; ΔRₘₐₓ = nonadiabatic_config.coordinate_step; Rₛₜₒₚ = Rstop
   ΔRₚᵢₑₛₑ = nonadiabatic_config.coordinate_piece
@@ -55,11 +53,11 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
   areas = Array{Vector{NonadiabaticArea}, 2}(undef, N, N)
   fill!(areas, Vector{NonadiabaticArea}(undef, 0))
 
-  info("Single peak non-adiabatic area detection.")
-  info("Search configuration: [$Rₛₜₐᵣₜ, $Rₛₜₒₚ], ΔRₘₐₓ=$ΔRₘₐₓ; R in data table: [$(M_∂_∂Rᵍᵒᵒᵈ[1, 1]), $(M_∂_∂Rᵍᵒᵒᵈ[L, 1])]; ϵ(⟨|∂/∂R|⟩ₚₑₐₖ)=$ϵₚₑₐₖ; ⟨|∂/∂R|⟩ₛₘₐₗₗ=$yₛₘₐₗₗ; ϵ(⟨|∂/∂R|⟩ₛₘₐₗₗ)=$ϵ_yₛₘₐₗₗ")
+  @info "Single peak non-adiabatic area detection."
+  @info "Search configuration: [$Rₛₜₐᵣₜ, $Rₛₜₒₚ], ΔRₘₐₓ=$ΔRₘₐₓ; R in data table: [$(M_∂_∂Rᵍᵒᵒᵈ[1, 1]), $(M_∂_∂Rᵍᵒᵒᵈ[L, 1])]; ϵ(⟨|∂/∂R|⟩ₚₑₐₖ)=$ϵₚₑₐₖ; ⟨|∂/∂R|⟩ₛₘₐₗₗ=$yₛₘₐₗₗ; ϵ(⟨|∂/∂R|⟩ₛₘₐₗₗ)=$ϵ_yₛₘₐₗₗ"
   for i = 1:N, j = 1:N
     if i < j && j - i == 1
-      info("⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩ Scanning ⟨$(i)|∂/∂R|$(j)⟩ ⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩")
+      @info "⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩ Scanning ⟨$(i)|∂/∂R|$(j)⟩ ⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩⇩"
       τ = M_∂_∂R[i, j]
 
       dirty_areas = Vector{DirtyNonadiabaticArea}(undef, 0)
@@ -91,12 +89,12 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
         χₖ = abs(yₖ) > abs(yₛₘₐₗₗ) ? abs(abs(yₖ) - abs(yₛₘₐₗₗ)) : abs(yₖ)
         if ℵ
           ℵ = χₖ > ϵ_yₛₘₐₗₗ
-          #info("ℵ was true and now ℵ=$ℵ; χₖ=$χₖ; ϵ_yₛₘₐₗₗ=$ϵ_yₛₘₐₗₗ; xₖ=$xₖ; yₖ=$yₖ")
+          #@info "ℵ was true and now ℵ=$ℵ; χₖ=$χₖ; ϵ_yₛₘₐₗₗ=$ϵ_yₛₘₐₗₗ; xₖ=$xₖ; yₖ=$yₖ"
         else
           σₖ = sign(yₖ)
           Αₛₜₐᵣₜ = (χₖ > ϵ_yₛₘₐₗₗ && σₖ > 0 && s == 1) || (χₖ > ϵ_yₛₘₐₗₗ && σₖ < 0 && s == -1)
           Αₛₜₒₚ = (χₖ <= ϵ_yₛₘₐₗₗ && σₖ > 0 && s == -1) || (χₖ <= ϵ_yₛₘₐₗₗ && σₖ < 0 && s == 1)
-          #info("ℵ was false anf now ℵ=$ℵ; χₖ=$χₖ; ϵ_yₛₘₐₗₗ=$ϵ_yₛₘₐₗₗ; σₖ=$σₖ; s=$s; ℷ=$ℷ; Αₛₜₐᵣₜ=$Αₛₜₐᵣₜ; Αₛₜₒₚ=$Αₛₜₒₚ; xₖ=$xₖ; yₖ=$yₖ")
+          #@info "ℵ was false anf now ℵ=$ℵ; χₖ=$χₖ; ϵ_yₛₘₐₗₗ=$ϵ_yₛₘₐₗₗ; σₖ=$σₖ; s=$s; ℷ=$ℷ; Αₛₜₐᵣₜ=$Αₛₜₐᵣₜ; Αₛₜₒₚ=$Αₛₜₒₚ; xₖ=$xₖ; yₖ=$yₖ"
           if Αₛₜₐᵣₜ
             if !ℷ
               ℷ = true
@@ -104,14 +102,14 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
               Α.states = (i, j)
               Α.coordinate_from = xₖ
               Α.sign = σₖ
-              info("Αₛₜₐᵣₜ at $(Α.coordinate_from); χₖ=$χₖ; yₖ=$yₖ; ℵ=$ℵ; ℷ=$ℷ")
+              @info "Αₛₜₐᵣₜ at $(Α.coordinate_from); χₖ=$χₖ; yₖ=$yₖ; ℵ=$ℵ; ℷ=$ℷ"
             end
           elseif Αₛₜₒₚ
             if ℷ
               ℷ = false
               Α.coordinate_to = xₖ
               push!(dirty_areas, Α)
-              info("Αₛₜₒₚ at $(Α.coordinate_to); χₖ=$χₖ; yₖ=$yₖ; ℵ=$ℵ; ℷ=$ℷ")
+              @info "Αₛₜₒₚ at $(Α.coordinate_to); χₖ=$χₖ; yₖ=$yₖ; ℵ=$ℵ; ℷ=$ℷ"
             end
           else
             # nothing
@@ -148,10 +146,10 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
                   else
                     push!(Α.pits, (xₘₐₓ, τₘₐₓ))
                   end
-                  info("𝔐aximum of ⟨$(i)|∂/∂R|$(j)⟩ found: Rₘₐₓ=$(format("{:.5f}", xₘₐₓ)); τ(Rₘₐₓ)=$(format("{:.6e}", τₘₐₓ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))")
+                  @info "𝔐aximum of ⟨$(i)|∂/∂R|$(j)⟩ found: Rₘₐₓ=$(format("{:.5f}", xₘₐₓ)); τ(Rₘₐₓ)=$(format("{:.6e}", τₘₐₓ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))"
                 end
                 # -----------
-                #info("ALG: Found function maximum in an area; τ(xₘₐₓ)≈$(M - ϵₚₑₐₖ); xₗ=$xₗ; xₖ=$xₖ")
+                #@info "ALG: Found function maximum in an area; τ(xₘₐₓ)≈$(M - ϵₚₑₐₖ); xₗ=$xₗ; xₖ=$xₖ"
                 #maximum = (xₗ, xₖ, M - ϵₚₑₐₖ)
                 #push!(maxima, maximum)
                 s = -1; m = yₖ
@@ -178,10 +176,10 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
                   else
                     push!(Α.peaks, (xₘᵢₙ, τₘᵢₙ))
                   end
-                  info("𝔐inimum of ⟨$(i)|∂/∂R|$(j)⟩ found: Rₘᵢₙ=$(format("{:.5f}", xₘᵢₙ)); τ(Rₘᵢₙ)=$(format("{:.6e}", τₘᵢₙ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))")
+                  @info "𝔐inimum of ⟨$(i)|∂/∂R|$(j)⟩ found: Rₘᵢₙ=$(format("{:.5f}", xₘᵢₙ)); τ(Rₘᵢₙ)=$(format("{:.6e}", τₘᵢₙ)); ϵʳᵉˡ=$(format("{:.6e}", Optim.rel_tol(result))); ϵᵃᵇˢ=$(format("{:.6e}", Optim.abs_tol(result)))"
                 end
                 # -----------
-                #info("ALG: Found function minimum in an area; τ(xₘᵢₙ)≈$(M - ϵₚₑₐₖ); xₗ=$xₗ; xₖ=$xₖ")
+                #@info "ALG: Found function minimum in an area; τ(xₘᵢₙ)≈$(M - ϵₚₑₐₖ); xₗ=$xₗ; xₖ=$xₖ"
                 #minimum = (xₗ, xₖ, m - ϵₚₑₐₖ)
                 #push!(minima, minimum)
                 yₖ₁ = table[k-1][2]
@@ -226,14 +224,14 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
             new_area.coordinate_potentials = 0.0
             new_area.deltaV_at_R0 = Hᴬ[j, j](R₀) - Hᴬ[i, i](R₀)
             if χₚₑₐₖ <= ϵ_yₛₘₐₗₗ
-              warn("Skipping low peak (χₚₑₐₖ=$χₚₑₐₖ ≤ ϵ(⟨|∂/∂R|⟩ₛₘₐₗₗ)=$ϵ_yₛₘₐₗₗ): $(new_area)")
+              @warn "Skipping low peak (χₚₑₐₖ=$χₚₑₐₖ ≤ ϵ(⟨|∂/∂R|⟩ₛₘₐₗₗ)=$ϵ_yₛₘₐₗₗ): $(new_area)"
               continue
             end
             push!(areas[i, j], new_area)
           end
         end
       end
-      info("⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧")
+      @info "⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧⇧"
     else
       # undef reference
     end
@@ -252,24 +250,23 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
     end
   end
 
-  info()
-  info("▫▫▫▫▫▫▫▫▫▫▫ Single Peak Areas Summary ▫▫▫▫▫▫▫▫▫▫▫")
+  @info ""
+  @info "▫▫▫▫▫▫▫▫▫▫▫ Single Peak Areas Summary ▫▫▫▫▫▫▫▫▫▫▫"
   for i = 1:N, j=1:N
     if i < j && j - i == 1
-      info("*********** Areas of ⟨$(i)|`∂/∂R`|$(j)⟩ ***********")
+      @info "*********** Areas of ⟨$(i)|`∂/∂R`|$(j)⟩ ***********"
       for Aᵛ in areas[i, j]
-        info(Aᵛ)
+        @info Aᵛ
       end
-      info("*******************************************")
+      @info "*******************************************"
     end
   end
-  info("▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫")
+  @info "▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫"
 
   return areas
 end
 
 function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{NonadiabaticArea}, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
-    Logging.configure(level=INFO)
   N = size(M_Hₐ, 1)
   M_Αˡᶻ = Array{Vector{SinglePeakNonadiabaticArea}, 2}(undef, N, N)
   fill!(M_Αˡᶻ, Vector{SinglePeakNonadiabaticArea}(undef, 0))
@@ -310,7 +307,7 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{
         Αˡᶻ.values_∂_∂R = values_∂_∂R
         Αˡᶻ.sign = σ
         push!(M_Αˡᶻ[i, j], Αˡᶻ)
-        info("New LZ area: $Αˡᶻ")
+        @info "New LZ area: $Αˡᶻ"
 
         Αˡᶻ_inv = SinglePeakNonadiabaticArea()
         Αˡᶻ_inv.states = (j, i)
@@ -321,7 +318,7 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{
         Αˡᶻ_inv.values_∂_∂R = -values_∂_∂R
         Αˡᶻ_inv.sign = -σ
         push!(M_Αˡᶻ[j, i], Αˡᶻ_inv)
-        info("New LZ area: $Αˡᶻ_inv")
+        @info "New LZ area: $Αˡᶻ_inv"
       else
         # nothing
       end
@@ -332,8 +329,7 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{
 end
 
 function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadiabaticArea}, 2}, diabatization_settings::DiabatizationSettings)
-    Logging.configure(level=INFO)
-    info("==== Landau-Zener Areas Filtering =====")
+    @info "==== Landau-Zener Areas Filtering ====="
     N = size(lz_areas, 1)
     selected_areas = diabatization_settings.areas
     lz_areas_filtered = Array{Vector{SinglePeakNonadiabaticArea}, 2}(undef, N, N)
@@ -342,10 +338,10 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
     for i = 1:N, j = 1:N
         lz_ij = lz_areas[i, j]
         if isempty(lz_ij)
-            info("Skipping the empty list of areas for ⟨$(i)|∂/∂R|$(j)⟩")
+            @info "Skipping the empty list of areas for ⟨$(i)|∂/∂R|$(j)⟩"
         else
-            info("Filtering the areas for ⟨$(i)|∂/∂R|$(j)⟩...")
-            info("Area: $lz_ij")
+            @info "Filtering the areas for ⟨$(i)|∂/∂R|$(j)⟩..."
+            @info "Area: $lz_ij"
             lz_ij_filtered = filter(
                 Αˡᶻ -> begin
                     R₀ = Αˡᶻ.coordinate_∂_∂R
@@ -354,17 +350,17 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
                             a_i = i < j ? s_area.states[1] : s_area.states[2];
                             a_j = i < j ? s_area.states[2] : s_area.states[1];
                             R₀ₛ = s_area.coordinate
-                            #info("Cheking: a_i = $a_i, a_j = $a_j, i = $i, j = $j, |R₀ - R₀ₛ| = $(abs(R₀ - R₀ₛ))")
+                            #@info "Cheking: a_i = $a_i, a_j = $a_j, i = $i, j = $j, |R₀ - R₀ₛ| = $(abs(R₀ - R₀ₛ))"
                             return a_i == i && a_j == j && abs(R₀ - R₀ₛ) <= ϵᴿ
                         end,
                         selected_areas)
                     return ix_s_area > 0
                 end,
                 lz_ij)
-            info("Size of filtered areas for for ⟨$(i)|∂/∂R|$(j)⟩ - $(length)")
+            @info "Size of filtered areas for for ⟨$(i)|∂/∂R|$(j)⟩ - $(length)"
             lz_areas_filtered[i, j] = lz_ij_filtered
         end
     end
-    info("==== End of Landau-Zener Areas Filtering =====")
+    @info "==== End of Landau-Zener Areas Filtering ====="
     return lz_areas_filtered;
 end

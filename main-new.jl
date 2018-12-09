@@ -1,9 +1,6 @@
 using Diabatizem
 
-using Logging
-Logging.configure(level=INFO)
-
-info("=== Diabatizem ===")
+@info "=== Diabatizem ==="
 C = loadConfiguration("configuration-new.json");
 D = buildData(C.input_data.hamiltonian_adiabatic, C.input_data.coupling_∂_∂R_adiabatic, C.settings.interpolation);
 
@@ -25,30 +22,30 @@ Sl = solverTransformationMatrixForAreas(Aˡᶻᶠˡ, ∂_∂Rᴬ, ∂_∂Rᵐᵒ
 expandLocalSolutions(Sl, Rᵈᵃᵗᵃ, C.settings.diabatization);
 Rᶜ, S, Hᴰ, ∂_∂Rᴰ, ∂_∂Rᵐ = diabatize(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, Sl, C.settings.diabatization, Aˡᶻᶠ);
 
-info("Transformed in the interval [$(Rᶜ[1]), $(Rᶜ[end])]")
+@info "Transformed in the interval [$(Rᶜ[1]), $(Rᶜ[end])]"
 @assert !isempty(S)
-info("Transformation matrix size: $(size(S))")
+@info "Transformation matrix size: $(size(S))"
 @assert !isempty(Hᴰ)
-info("Hamiltonian matrix size: $(size(Hᴰ))")
+@info "Hamiltonian matrix size: $(size(Hᴰ))"
 @assert !isempty(∂_∂Rᴰ)
-info("⟨·|∂/∂Rᴰ|·⟩ matrix size: $(size(∂_∂Rᴰ))")
+@info "⟨·|∂/∂Rᴰ|·⟩ matrix size: $(size(∂_∂Rᴰ))"
 
-info("type - $(typeof(Hᴰ))")
+@info "type - $(typeof(Hᴰ))"
 
-info("Matrix data...")
+@info "Matrix data..."
 Uᴰᵈᵃᵗᵃ = matl2matldiag(Hᴰ);
 Hᴰᵈᵃᵗᵃ = matl2matlupperx(Hᴰ);
 ∂_∂Rᴰᵈᵃᵗᵃ = matl2matlupperx(∂_∂Rᴰ);
 ∂_∂Rᵐᵈᵃᵗᵃ = matl2matlupperx(∂_∂Rᵐ);
 Sᵈᵃᵗᵃ = matl2matdata(S);
-info("Done.")
+@info "Done."
 
-info("⟨·|∂²_∂R²ᴰ|·⟩...")
+@info "⟨·|∂²_∂R²ᴰ|·⟩..."
 (∂²_∂R²ᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag) = calculate∂²_∂R²(Rᵈᵃᵗᵃ, ∂_∂Rᴰᵈᵃᵗᵃ, size(Uᴰᵈᵃᵗᵃ, 2));
-info("Done.")
+@info "Done."
 
-info("Saving...")
+@info "Saving..."
 saveData(Rᶜ, S, Sᵈᵃᵗᵃ, Uᴰᵈᵃᵗᵃ, Hᴰᵈᵃᵗᵃ,
     ∂_∂Rᴰᵈᵃᵗᵃ, ∂_∂Rᵐᵈᵃᵗᵃ, Rᵈᵃᵗᵃ,
     ∂²_∂R²ᴰᵈᵃᵗᵃ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, Sl, C.output_paths)
-info("Done.")
+@info "Done."

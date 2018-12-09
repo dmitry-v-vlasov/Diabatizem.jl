@@ -1,8 +1,5 @@
 using Diabatizem
-using Logging
 using Nullables
-
-Logging.configure(level=INFO)
 
 C = loadConfiguration("configuration.json");
 D = buildData(C.input_data.hamiltonian_adiabatic, C.input_data.coupling_∂_∂R_adiabatic, C.settings.interpolation);
@@ -21,7 +18,7 @@ inp = C.input_paths
 @assert isfile(get(inp.file_transformation_matrix))
 
 S_file_data = load_data(get(inp.file_transformation_matrix); header=true)
-info("Loaded file '$(get(inp.file_transformation_matrix))' with data of size $(size(S_file_data))")
+@info "Loaded file '$(get(inp.file_transformation_matrix))' with data of size $(size(S_file_data))"
 Rᵖᵒⁱⁿᵗˢ, S = matdata2matl(S_file_data)
 
 # (Rᵖᵒⁱⁿᵗˢ,

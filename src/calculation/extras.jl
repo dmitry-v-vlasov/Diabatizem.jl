@@ -1,28 +1,26 @@
-using Logging
 
 import Dierckx
 
 function expandLocalSolutions(solutions::Vector{LocalSolution}, Rᵛ::Vector{Float64}, C::DiabatizationSettings)
-    Logging.configure(level=INFO)
     for solution ∈ solutions
-        info("Working with solution:\n$solution")
+        @info "Working with solution:\n$solution"
         S¹ = solution.S[1]; Sᵉ = solution.S[end]
         R¹ = solution.points[1]; Rᵉ = solution.points[end]
         S¹ᵗ = round(S¹); Sᵉᵗ = round(Sᵉ)
         Rᵛ¹ = Rᵛ[1]; Rᵛᵉ = Rᵛ[end]
         Svf = matl2matfsl(solution.points, solution.S)[1]
-        info("==========================================================================================")
-        info("******************************************************************************************")
-        info("Boundary matrices:\n - S¹=\n$(mat2string(S¹));\n - Sᵉ=\n$(mat2string(Sᵉ))")
-        info("-----")
-        info("Argument boundaries: [$R¹, $Rᵉ]")
-        info("+++++")
-        info("Target boundary matrices:\n - S¹ᵗ=\n$(mat2string(S¹ᵗ));\n - Sᵉᵗ=\n$(mat2string(Sᵉᵗ))")
-        info("-----")
-        info("Ταrget argument boundaries: [$Rᵛ¹, $Rᵛᵉ]")
-        info("******************************************************************************************")
+        @info "=========================================================================================="
+        @info "******************************************************************************************"
+        @info "Boundary matrices:\n - S¹=\n$(mat2string(S¹));\n - Sᵉ=\n$(mat2string(Sᵉ))"
+        @info "-----"
+        @info "Argument boundaries: [$R¹, $Rᵉ]"
+        @info "+++++"
+        @info "Target boundary matrices:\n - S¹ᵗ=\n$(mat2string(S¹ᵗ));\n - Sᵉᵗ=\n$(mat2string(Sᵉᵗ))"
+        @info "-----"
+        @info "Ταrget argument boundaries: [$Rᵛ¹, $Rᵛᵉ]"
+        @info "******************************************************************************************"
         Rᴸˢ, Rᴿˢ, Sᴸˢ, Sᴿˢ = smoothing_sigmoid(solution, Rᵛ, S¹ᵗ, Sᵉᵗ, 5e-2, 5e-2)
-        info("Expanding the solution from the interval [$(Rᴸˢ[1]), $(Rᴿˢ[end])] to [$(Rᵛ[1]), $(Rᵛ[end])]")
+        @info "Expanding the solution from the interval [$(Rᴸˢ[1]), $(Rᴿˢ[end])] to [$(Rᵛ[1]), $(Rᵛ[end])]"
         Rᵐ = mergeGrids(Rᵛ, Rᴸˢ, solution.points, Rᴿˢ)
         @assert issorted(Rᵐ)
         Rᵖ = solution.points
@@ -44,13 +42,12 @@ function expandLocalSolutions(solutions::Vector{LocalSolution}, Rᵛ::Vector{Flo
         end
         solution.points = Rˢ
         solution.S = Sˢ
-        info("The result solution size is $(length(solution.S)) in with $(length(solution.points)) points")
-        info("==========================================================================================")
+        @info "The result solution size is $(length(solution.S)) in with $(length(solution.points)) points"
+        @info "=========================================================================================="
     end
 end
 
 function mergeGrids(Rᵛ, Rᴸˢ, Rˢ, Rᴿˢ)
-    Logging.configure(level=INFO)
     Rᵐ = Vector{Float64}(undef, 0)
     @assert Rᵛ[1] <= Rᴸˢ[1]
     @assert Rᴸˢ[1] < Rˢ[1]
@@ -60,13 +57,13 @@ function mergeGrids(Rᵛ, Rᴸˢ, Rˢ, Rᴿˢ)
     # 1. left interval
     iR = findlast(R -> R < Rᴸˢ[1], Rᵛ)
     if iR > 0
-        info("Merging left interval [$(Rᵛ[1]), $(Rᵛ[iR])]")
+        @info "Merging left interval [$(Rᵛ[1]), $(Rᵛ[iR])]"
         for i = 1:iR
             push!(Rᵐ, Rᵛ[i])
         end
     end
     # 2. left boundary
-    info("Merging left boundary [$(Rᴸˢ[1]), $(Rᴸˢ[end])]")
+    @info "Merging left boundary [$(Rᴸˢ[1]), $(Rᴸˢ[end])]"
     for Rᴸˢⁱ ∈ Rᴸˢ
         push!(Rᵐ, Rᴸˢⁱ)
     end
@@ -76,19 +73,19 @@ function mergeGrids(Rᵛ, Rᴸˢ, Rˢ, Rᴿˢ)
     @assert iRᴸ > 0
     @assert iRᴿ > 0
     @assert iRᴸ < iRᴿ
-    info("Merging solution interval [$(Rˢ[iRᴸ]), $(Rˢ[iRᴿ])]")
+    @info "Merging solution interval [$(Rˢ[iRᴸ]), $(Rˢ[iRᴿ])]"
     for i = iRᴸ:iRᴿ
         push!(Rᵐ, Rˢ[i])
     end
     # 4. right boundary
-    info("Merging right boundary [$(Rᴿˢ[1]), $(Rᴿˢ[end])]")
+    @info "Merging right boundary [$(Rᴿˢ[1]), $(Rᴿˢ[end])]"
     for Rᴿˢᵢ ∈ Rᴿˢ
         push!(Rᵐ, Rᴿˢᵢ)
     end
     # 5. right interval
     iR = findfirst(R -> R > Rᴿˢ[end], Rᵛ)
     if iR > 0
-        info("Merging right interval [$(Rᵛ[iR]), $(Rᵛ[end])]")
+        @info "Merging right interval [$(Rᵛ[iR]), $(Rᵛ[end])]"
         for i = iR:length(Rᵛ)
             push!(Rᵐ, Rᵛ[i])
         end
@@ -101,9 +98,8 @@ function smoothing_sigmoid(
     solution::LocalSolution, Rᵛ::Vector{Float64},
     S¹ᵗ::Matrix{Float64}, Sᵉᵗ::Matrix{Float64},
     ϵ::Float64, ϵ⁽¹⁾::Float64)
-    Logging.configure(level=INFO)
     states = solution.states; s¹ = states[1]; sᵉ = states[end]
-    info("ΣSigmoid smoothingΣ for $states")
+    @info "ΣSigmoid smoothingΣ for $states"
     R = solution.points
 
     Sv = solution.S
@@ -123,26 +119,26 @@ function smoothing_sigmoid(
     Rᴸᵉˣᵗ = filter(R -> R < Rᴸᵇ, Rᴸ)
     Rᴿᵉˣᵗ = filter(R -> R > Rᴿᵇ, Rᴿ)
 
-    info("The resulting boundary intervals: left - [$(Rᴸ[1]), $(Rᴸ[end])], right - [$(Rᴿ[1]), $(Rᴿ[end])]")
+    @info "The resulting boundary intervals: left - [$(Rᴸ[1]), $(Rᴸ[end])], right - [$(Rᴿ[1]), $(Rᴿ[end])]"
     Sᴸⁱⁿᵗ⁻ᶠ, Sᴿⁱⁿᵗ⁻ᶠ = internalFunctions(Rᴸⁱⁿᵗ, Rᴿⁱⁿᵗ, Sv)
     Sᴸᵛ, Sᴿᵛ = valuableFunctions(Rᴸⁱⁿᵗ, Rᴿⁱⁿᵗ, Sᴸⁱⁿᵗ⁻ᶠ, Sᴿⁱⁿᵗ⁻ᶠ, Rᴸ, Rᴿ, s¹, sᵉ)
     Sᴸᵈ, Sᴿᵈ = dummyFunctions(S¹ᵗ, Sᵉᵗ, size(S¹ᵗ, 1))
 
-    info("Making boundary sigmoid functions.")
-    info("Left interval: [$(Rᴸ[1]) ..[$(length(Rᴸᵉˣᵗ))].., |$(Rᴸᵇ) ...[$(length(Rᴸⁱⁿᵗ))]... $(Rᴸ[end])]")
-    info("Right interval: [$(Rᴿ[1]) ...[$(length(Rᴿⁱⁿᵗ))]... $(Rᴿᵇ)|, ..[$(length(Rᴿᵉˣᵗ))].. $(Rᴿ[end])]")
+    @info "Making boundary sigmoid functions."
+    @info "Left interval: [$(Rᴸ[1]) ..[$(length(Rᴸᵉˣᵗ))].., |$(Rᴸᵇ) ...[$(length(Rᴸⁱⁿᵗ))]... $(Rᴸ[end])]"
+    @info "Right interval: [$(Rᴿ[1]) ...[$(length(Rᴿⁱⁿᵗ))]... $(Rᴿᵇ)|, ..[$(length(Rᴿᵉˣᵗ))].. $(Rᴿ[end])]"
     Sᴸ, Sᴿ = boundaryFunctions(Rᴸ, Rᴿ, Sᴸⁱⁿᵗ⁻ᶠ, Sᴿⁱⁿᵗ⁻ᶠ, Sᴸᵈ, Sᴿᵈ)
-    info("The boundary functions are ready.")
-    info("++++++")
-    info("Sᴸ(R=$(Rᴸ[1])) =\n$(mat2string(matf2mat(Rᴸ[1], Sᴸ)))")
-    info("---")
-    info("Sᴿ(R=$(Rᴿ[end])) =\n$(mat2string(matf2mat(Rᴿ[end], Sᴿ)))")
-    info("++++++")
+    @info "The boundary functions are ready."
+    @info "++++++"
+    @info "Sᴸ(R=$(Rᴸ[1])) =\n$(mat2string(matf2mat(Rᴸ[1], Sᴸ)))"
+    @info "---"
+    @info "Sᴿ(R=$(Rᴿ[end])) =\n$(mat2string(matf2mat(Rᴿ[end], Sᴿ)))"
+    @info "++++++"
 
-    info("----------")
+    @info "----------"
     # αˢʰᵃʳᵖ = 4.0
     # x₀ = (X[1] + X[end])/2; α = σf * abs(X[end]-X[1]) / αˢʰᵃʳᵖ
-    info("----------")
+    @info "----------"
     return Rᴸ, Rᴿ, Sᴸ, Sᴿ
 end
 
@@ -150,8 +146,7 @@ function boundaryFunctions(
     Rᴸ::Vector{Float64}, Rᴿ::Vector{Float64},
     Sᴸᵛ::Array{Function, 2}, Sᴿᵛ::Array{Function, 2},
     Sᴸᵈ::Array{Function, 2}, Sᴿᵈ::Array{Function, 2})
-    Logging.configure(level=INFO)
-    info("Making boundary functions.")
+    @info "Making boundary functions."
     N = size(Sᴸᵛ, 1);
     Sᴸ = Array{Function, 2}(N, N); Sᴿ = Array{Function, 2}(N, N)
 
@@ -193,8 +188,7 @@ function valuableFunctions(
     Sᴸⁱⁿᵗ⁻ᶠ::Array{Function, 2}, Sᴿⁱⁿᵗ⁻ᶠ::Array{Function, 2},
     Rᴸ::Vector{Float64}, Rᴿ::Vector{Float64},
     s¹::Int, sᵉ::Int)
-    Logging.configure(level=INFO)
-    info("Making valuable functions.")
+    @info "Making valuable functions."
     @assert size(Sᴸⁱⁿᵗ⁻ᶠ, 1) == size(Sᴿⁱⁿᵗ⁻ᶠ, 1)
     N = size(Sᴸⁱⁿᵗ⁻ᶠ, 1);
     Rᴸ⁰ = Rᴸⁱⁿᵗ[1]; Rᴸᵉ = Rᴸⁱⁿᵗ[end]
@@ -205,7 +199,7 @@ function valuableFunctions(
         Sᴿ⁰[i, j] = Sᴿⁱⁿᵗ⁻ᶠ[i, j](Rᴿ⁰);
     end
     Sᴸ⁰ = round(Sᴸ⁰, 0); Sᴿ⁰ = round(Sᴿ⁰, 0)
-    #info("Target matrix values:\nSᴸ⁰=\n$(mat2string(Sᴸ⁰))\nSᴿ⁰=\n$(mat2string(Sᴿ⁰))")
+    #@info "Target matrix values:\nSᴸ⁰=\n$(mat2string(Sᴸ⁰))\nSᴿ⁰=\n$(mat2string(Sᴿ⁰))"
     Sᴸ = Array{Function, 2}(N, N); Sᴿ = Array{Function, 2}(N, N)
     for i=1:N, j = 1:N
         if i ∈ s¹:sᵉ && j ∈ s¹:sᵉ
@@ -232,7 +226,7 @@ function valuableFunctions(
             Sᴿ[i, j] = R -> Sᴿ⁰[i, j]
         end
     end
-    info("Ready valuable function matrices with sizes: $(size(Sᴸ)) and $(size(Sᴿ))")
+    @info "Ready valuable function matrices with sizes: $(size(Sᴸ)) and $(size(Sᴿ))"
     return Sᴸ, Sᴿ
 end
 
@@ -256,15 +250,14 @@ function argumentGrid(Rᴸ::Vector{Float64}, Rᴿ::Vector{Float64}, Rᵛ::Vector
     iRᴸ = findlast(R -> R <= Rᴸᵉˣᵗ, Rᵛ); iRᴸ = iRᴸ > 0 ? iRᴸ : 1
     iRᴿ = findfirst(R -> R >= Rᴿᵉˣᵗ, Rᵛ); iRᴿ = iRᴿ > 0 ? iRᴿ : length(Rᵛ)
     Rᴸᵉˣᵗ = Rᵛ[iRᴸ]; Rᴿᵉˣᵗ = Rᵛ[iRᴿ]
-    info("Smoothing intervals: left - [$Rᴸᵉˣᵗ, |$(Rᴸ[1]),$(Rᴸ[end])], right - [$(Rᴿ[1]), $(Rᴿ[end])|, $Rᴿᵉˣᵗ]")
-    info("Extra area steps: left - hᴸ = $hᴸ, right - hᴿ = $hᴿ; Max steps: left - Hᴸ = $Hᴸ, right - Hᴿ = $Hᴿ")
+    @info "Smoothing intervals: left - [$Rᴸᵉˣᵗ, |$(Rᴸ[1]),$(Rᴸ[end])], right - [$(Rᴿ[1]), $(Rᴿ[end])|, $Rᴿᵉˣᵗ]"
+    @info "Extra area steps: left - hᴸ = $hᴸ, right - hᴿ = $hᴿ; Max steps: left - Hᴸ = $Hᴸ, right - Hᴿ = $Hᴿ"
     return unique(vcat(collect(Rᴸᵉˣᵗ:hᴸ:Rᴸ[1]), Rᴸ)), unique(vcat(Rᴿ, collect(Rᴿ[end]:hᴿ:Rᴿᵉˣᵗ)))
 end
 
 function solutionBoundaryPoints(
     Rv::Vector{Float64}, Sv::Vector{Matrix{Float64}},
     ϵ::Float64, ϵ⁽¹⁾::Float64; rev=false, max_Δ⁽⁰⁾ = 10, max_Δ⁽¹⁾ = 10)
-    Logging.configure(level=INFO)
     max_data_count = 100
     Δ⁽⁰⁾ = 0; Δ⁽¹⁾ = 0
     R = rev == false ? Rv : reverse(Rv)
@@ -272,19 +265,19 @@ function solutionBoundaryPoints(
 
     kᵉ = 1; k_range = 2 : 1 : (max_data_count > length(R) ? length(R) : max_data_count)
 
-    info("Boundary calculation in interval R = [$(R[1]), $(R[end])], in the $(rev ? "reversed" : "direct") order.")
-    info("With epsilons: ϵ = $ϵ, ϵ⁽¹⁾ = $ϵ⁽¹⁾")
+    @info "Boundary calculation in interval R = [$(R[1]), $(R[end])], in the $(rev ? "reversed" : "direct") order."
+    @info "With epsilons: ϵ = $ϵ, ϵ⁽¹⁾ = $ϵ⁽¹⁾"
     for k ∈ k_range
         kᵉ = k; kₘ = ceil(Int, (k - 1) * (1 - 1 / golden))
         kₘ = kₘ > 1 ? kₘ : 1
 
         ΔS⁽⁰⁾ = abs(S[k] - S[1]); ΔS⁽⁰⁾ₘ = abs(S[kₘ] - S[1])
         ΔS⁽¹⁾ = ΔS⁽⁰⁾ / abs(R[k] - R[1]); ΔS⁽¹⁾ₘ = ΔS⁽⁰⁾ₘ / abs(R[kₘ] - R[1])
-        #info("R = $(R[k]), ΔS⁽⁰⁾ = $ΔS⁽⁰⁾, ΔS⁽¹⁾ = $ΔS⁽¹⁾\n")
+        #@info "R = $(R[k]), ΔS⁽⁰⁾ = $ΔS⁽⁰⁾, ΔS⁽¹⁾ = $ΔS⁽¹⁾\n"
         if all(s -> s > 0, ΔS⁽⁰⁾) && all(s -> s > 0, ΔS⁽¹⁾)
             ϵᵏ = filter(ϵᵏᵢ -> ϵᵏᵢ > 0, ΔS⁽⁰⁾ₘ ./ ΔS⁽⁰⁾)
             ϵ⁽¹⁾ᵏ = 1 - filter(ϵ⁽¹⁾ᵏᵢ -> ϵ⁽¹⁾ᵏᵢ > 0, ΔS⁽¹⁾ₘ ./ ΔS⁽¹⁾)
-            info("k = $k; R = $(R[k]); ϵᵏ = $ϵᵏ <-> ϵ⁽¹⁾ᵏ = $ϵ⁽¹⁾ᵏ; ΔS⁽⁰⁾ = $ΔS⁽⁰⁾; ΔS⁽⁰⁾ₘ = $ΔS⁽⁰⁾ₘ")
+            @info "k = $k; R = $(R[k]); ϵᵏ = $ϵᵏ <-> ϵ⁽¹⁾ᵏ = $ϵ⁽¹⁾ᵏ; ΔS⁽⁰⁾ = $ΔS⁽⁰⁾; ΔS⁽⁰⁾ₘ = $ΔS⁽⁰⁾ₘ"
             if any(ϵᵏᵢ -> ϵᵏᵢ > ϵ, ϵᵏ)
                 Δ⁽⁰⁾ += 1
             end
@@ -293,15 +286,15 @@ function solutionBoundaryPoints(
             end
         end
         if Δ⁽⁰⁾ > max_Δ⁽⁰⁾ && Δ⁽¹⁾ > max_Δ⁽¹⁾
-            warn("Count reached for k = $kᵉ at R = $(R[kᵉ])")
+            @warn "Count reached for k = $kᵉ at R = $(R[kᵉ])"
             break
         end
     end
     if rev == false
-        info("The result range is [$(R[1]), $(R[kᵉ])]")
+        @info "The result range is [$(R[1]), $(R[kᵉ])]"
         return R[1:kᵉ]
     else
-        info("The result range is [$(R[kᵉ]), $(R[1])]")
+        @info "The result range is [$(R[kᵉ]), $(R[1])]"
         return reverse(R[1:kᵉ])
     end
 end

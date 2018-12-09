@@ -41,7 +41,7 @@ function potentialAsymptoticValues(potentials::Array{Function, 2},
       end
 
       if R == Rₐ && zero_counter < 10
-        error("The potential with the number $l (possible state name is '$(⚛⚛_STATES[l])') has unclear asymptotic behaviour.")
+        @error "The potential with the number $l (possible state name is '$(⚛⚛_STATES[l])') has unclear asymptotic behaviour."
       end
     end
   end

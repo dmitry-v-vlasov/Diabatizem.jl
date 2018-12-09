@@ -1,5 +1,4 @@
 using Calculus
-using Logging
 using ProgressMeter
 using DataFrames
 
@@ -31,10 +30,9 @@ end
 
 function sigmoid_of_name(f1::Function, f2::Function, x₀, α, name::AbstractString)
   return x -> begin
-    Logging.configure(level=INFO)
     sf = (1 - sigmoid(x, x₀, α))*f1(x) + sigmoid(x, x₀, α)*f2(x)
     if sf === NaN || sf === NaN64 || sf === NaN32 || sf === NaN16
-      error("SIGMOID NaN: x=$x, x₀=$x₀, α=$α, f1(x)=$(f1(x)), f2(x)=$(f2(x)), σ(x)=$(sigmoid(x, x₀, α)), name=$name")
+      @error "SIGMOID NaN: x=$x, x₀=$x₀, α=$α, f1(x)=$(f1(x)), f2(x)=$(f2(x)), σ(x)=$(sigmoid(x, x₀, α)), name=$name"
     end
     return sf
   end
@@ -169,9 +167,8 @@ function dataSizeOfSymetricMatrix(N::Int)
 end
 
 function sizeOfSymmetricUpperMatrix(Nˡ::Int)
-    Logging.configure(level=INFO)
     roots = real(roots([-Nˡ, -0.5, 0.5]))
-    info("Roots for Nˡ=$Nˡ: $roots")
+    @info "Roots for Nˡ=$Nˡ: $roots"
     @assert all(isreal, roots)
     N = maximum(filter(x -> x > 0, round(Int, real(roots))))
     L = dataSizeOfSymetricMatrix(N)
@@ -258,14 +255,13 @@ function matl2matlupperx(Mˡ::Vector{Matrix{Float64}})
 end
 
 function matlupperx_ddr2matl(M::Matrix{Float64})
-    Logging.configure(level=INFO)
     L = size(M, 1)
     L_N = size(M, 2)
     N = sizeOfSymmetricUpperMatrix(L_N)
     L_N_check = dataSizeOfSymetricMatrix(N)
     @assert L_N_check == L_N
     Mˡ = Vector{Matrix{Float64}}(undef, L)
-    info("N=$N, L=$L, L_N=$L_N")
+    @info "N=$N, L=$L, L_N=$L_N"
     for l = 1:L
         M_l = Matrix{Float64}(undef, N, N)
         for i = 1:N, j = 1:N

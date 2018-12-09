@@ -1,5 +1,4 @@
 using Calculus
-using Logging
 using ProgressMeter
 using Combinatorics
 using Nullables
@@ -13,21 +12,20 @@ function diabatize(
     Hₐ::Array{Function, 2},
     ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, ∂_∂R_arg::Vector{Float64},
     solutions::Vector{LocalSolution}, C::DiabatizationSettings, LZ::Array{Array{LandauZenerArea, 1}, 2})
-    Logging.configure(level=INFO)
-    info("**************************************************")
-    info("Diabatizing...")
+    @info "**************************************************"
+    @info "Diabatizing..."
     R = unique(sort(collect(Base.flatten(map(solution->solution.points, solutions)))))
-    info("Derived grid: [$(R[1]) ... $(R[end])] ($(length(R)))")
+    @info "Derived grid: [$(R[1]) ... $(R[end])] ($(length(R)))"
     @assert issorted(R)
     steps = R[2:end] - R[1:end-1]
     h = minimum(abs(steps)); H = maximum(abs(steps))
-    info("Diabatizing in the interval [$(R[1]), $(R[end])] with hₘᵢₙ=$h, hₘₐₓ=$H")
+    @info "Diabatizing in the interval [$(R[1]), $(R[end])] with hₘᵢₙ=$h, hₘₐₓ=$H"
     Rᶜ = clearGrid(R, 1e-10)
     empty!(steps)
     steps = Rᶜ[2:end] - Rᶜ[1:end-1]
     h = minimum(abs(steps)); H = maximum(abs(steps))
-    info("Cleared grid [$(Rᶜ[1]), $(Rᶜ[end])] ($(length(Rᶜ))) with hₘᵢₙ=$h, hₘₐₓ=$H")
-    info("Making partial matrices")
+    @info "Cleared grid [$(Rᶜ[1]), $(Rᶜ[end])] ($(length(Rᶜ))) with hₘᵢₙ=$h, hₘₐₓ=$H"
+    @info "Making partial matrices"
     Sᶠ = Vector{Array{Function, 2}}()
     Sᶠˢᵖ = Vector{Array{Dierckx.Spline1D, 2}}()
     for solution ∈ solutions
@@ -35,9 +33,9 @@ function diabatize(
         push!(Sᶠ, Sᶠⁱ[1])
         push!(Sᶠˢᵖ, Sᶠⁱ[2])
     end
-    info("Number of partial transformation matrices length - $(length(Sᶠ))")
+    @info "Number of partial transformation matrices length - $(length(Sᶠ))"
     Rᶜ, Sᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, ∂_∂Rᵐ = diabatizeWithPartialMatrices(Hₐ, ∂_∂R, ∂_∂Rᵐᵒᵈᵉˡ, ∂_∂R_arg, Rᶜ, Sᶠ, Sᶠˢᵖ, solutions, LZ)
-    info("**************************************************")
+    @info "**************************************************"
     return Rᶜ, Sᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, ∂_∂Rᵐ
 end
 
@@ -50,7 +48,7 @@ function diabatizeWithPartialMatrices(
     N = size(Sᶠ[1], 1)
     @assert N == size(Hₐ, 1)
     # ----
-    info("Full transformation matrix computation...")
+    @info "Full transformation matrix computation..."
     Sᵛ = Vector{Matrix{Float64}}(undef, 0)
     for R ∈ Rᶜ
         S = eye(N, N)
@@ -60,11 +58,11 @@ function diabatizeWithPartialMatrices(
         end
         push!(Sᵛ, S)
     end
-    info("Done.")
+    @info "Done."
     # ----
     Sᵛᶠ, Sᵛᶠˢᵖ = matl2matfsl(Rᶜ, Sᵛ)
     # ----
-    info("Transforming...")
+    @info "Transforming..."
     Hᵈ = Vector{Matrix{Float64}}(undef, 0)
     ∂_∂Rᵈ = Vector{Matrix{Float64}}(undef, 0)
     ∂_∂Rᵐ = Vector{Matrix{Float64}}(undef, 0)
@@ -72,8 +70,8 @@ function diabatizeWithPartialMatrices(
 
     interval_states = Dict{Vector{Int}, Tuple{Float64, Float64}}()
     foreach(s -> begin interval_states[s.states] = s.interval end, Sl)
-    info("Interval states: $interval_states")
-    info("Making new potentials...")
+    @info "Interval states: $interval_states"
+    @info "Making new potentials..."
     for R ∈ Rᶜ
         S = matf2mat(R, Sᵛᶠ)
         S⁻¹ = S'
@@ -88,7 +86,7 @@ function diabatizeWithPartialMatrices(
         push!(Sᵛᵉᶜ, S)
     end
 
-    info("Making new ⟨·|∂/∂R|·⟩...")
+    @info "Making new ⟨·|∂/∂R|·⟩..."
     for R ∈ ∂_∂R_arg
         S = matf2mat(R, Sᵛᶠ)
         ∇S = Dierckx.derivative.(Sᵛᶠˢᵖ, R; nu=1)
@@ -117,16 +115,16 @@ function diabatizeWithPartialMatrices(
     N_lz = size(LZ, 1)
     @assert size(LZ, 1) == size(LZ, 2)
     @assert N_lz == N
-    info("=================================Smoothing ⟨i|∂/∂R|j⟩=====================================")
+    @info "=================================Smoothing ⟨i|∂/∂R|j⟩====================================="
     for i = 1:N_lz, j = 1:N_lz
         if i >= j
             continue
         end
         if !isempty(LZ[i, j]) && i < j
-            info("********** Smoothing areas for ⟨$(i)|∂/∂R|$(j)⟩ **********")
+            @info "********** Smoothing areas for ⟨$(i)|∂/∂R|$(j)⟩ **********"
             for area ∈ LZ[i, j]
                 for sol ∈ Sl
-                    info("----------")
+                    @info "----------"
                     states = sol.states
                     s¹ = minimum(states); sᵉ = maximum(states)
                     states_ddr = combinations(collect(s¹:sᵉ), 2)
@@ -138,13 +136,13 @@ function diabatizeWithPartialMatrices(
                         peaks = sol.peaks
                         peak_found_at_R₀ = findfirst(peak->abs(peak[1] - R₀) < 1e-1, peaks) > 0
                         if (i == states_ddr_ij[1] && j == states_ddr_ij[2]) && peak_found_at_R₀
-                            info("!!!! - START smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!")
+                            @info "!!!! - START smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!"
                             @assert all(pair->pair[1] < pair[2], states_ddr)
                             states_ddr_f = filter(states -> states[2] - states[1] == 1, combinations(collect(s¹:sᵉ), 2))
 
-                            info("Smoothing area: $(LZ[i, j]) in interval [$R¹, $Rᵉ]")
+                            @info "Smoothing area: $(LZ[i, j]) in interval [$R¹, $Rᵉ]"
                             l¹ = findlast(R -> R < R¹, ∂_∂R_arg); lᵉ = findlast(R -> R <= Rᵉ, ∂_∂R_arg)
-                            info("Curve smoothing for the solution:\n$sol\nin interval [$R¹, $Rᵉ] for ⟨$(i)|∂/∂R|$(j)⟩...")
+                            @info "Curve smoothing for the solution:\n$sol\nin interval [$R¹, $Rᵉ] for ⟨$(i)|∂/∂R|$(j)⟩..."
                             k = dataColumnOfSymetricMatrix(i, j, N)
                             vR = ∂_∂R_arg[l¹:lᵉ]
                             ddr_sample = ∂_∂Rᴰᵈᵃᵗᵃ[l¹:lᵉ, k]
@@ -157,7 +155,7 @@ function diabatizeWithPartialMatrices(
 
                             τ₁₂ = real(roots([γ, β, α]))
 
-                            info("Roots for [$R¹, - $R₀ - , $Rᵉ]: $(τ₁₂)")
+                            @info "Roots for [$R¹, - $R₀ - , $Rᵉ]: $(τ₁₂)"
                             abs_max = findmax(abs(τ₁₂))
                             τ₀ = τ₁₂[abs_max[2]]
 
@@ -171,36 +169,36 @@ function diabatizeWithPartialMatrices(
                                 ϵ_τ = 0.005
                                 ΔRˢᵐ = 2 * abs(τ₀) * √((1 - ϵ_τ) / ϵ_τ)
                                 R¹ˢ = R₀ - ΔRˢᵐ; Rᵉˢ = R₀ + ΔRˢᵐ
-                                info("Recalculated smoothing area: ⟨$(i)|∂/∂R|$(j)⟩ in interval [$R¹ˢ, $Rᵉˢ]")
+                                @info "Recalculated smoothing area: ⟨$(i)|∂/∂R|$(j)⟩ in interval [$R¹ˢ, $Rᵉˢ]"
                                 l¹ˢ = findlast(R -> R < R¹ˢ, ∂_∂R_arg); lᵉˢ = findlast(R -> R <= Rᵉˢ, ∂_∂R_arg)
                                 vR = ∂_∂R_arg[l¹ˢ:lᵉˢ]
 
-                                info("For the coupling ⟨$(i)|∂/∂R|$(j)⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$(i)|∂/∂R|$(j)⟩dR = $It, [$R¹ˢ, $Rᵉˢ], ΔRˢᵐ=$ΔRˢᵐ")
+                                @info "For the coupling ⟨$(i)|∂/∂R|$(j)⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$(i)|∂/∂R|$(j)⟩dR = $It, [$R¹ˢ, $Rᵉˢ], ΔRˢᵐ=$ΔRˢᵐ"
                                 τ(R) = τ₀ / ((R - R₀)^2 + 4 * τ₀ * τ₀)
                                 ddr_sample_new = τ.(vR)
                                 ∂_∂Rᴰᵈᵃᵗᵃ[l¹ˢ:lᵉˢ, k] = ddr_sample_new
-                                info("!!!! - END smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!")
+                                @info "!!!! - END smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!"
                             else
-                                warn("Spectrum: $(abs(ddr_spectrum))")
-                                warn("Skipped smoothing of the slow oscilating curve ⟨$(i)|∂/∂R|$(j)⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$(i)|∂/∂R|$(j)⟩dR = $It, [$R¹, $Rᵉ]")
+                                @warn "Spectrum: $(abs(ddr_spectrum))"
+                                @warn "Skipped smoothing of the slow oscilating curve ⟨$(i)|∂/∂R|$(j)⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$(i)|∂/∂R|$(j)⟩dR = $It, [$R¹, $Rᵉ]"
                             end
                         end
                     end
                 end
             end
-            info("******************************************************")
+            @info "******************************************************"
         end
     end
-    info("==========================================================================================")
+    @info "=========================================================================================="
 
     # ddr_spectrum = fft(ddr_sample)
     # Lˢ = length(ddr_spectrum)
     # ix_cutting = round(Int, Lˢ/80)
     # ix_cutting = ix_cutting ≥ 1 ? ix_cutting : 1
     # if ix_cutting <= 2
-    #     warn("Possible rough smoothing with a single harmonic for ⟨$(i)|∂/∂R|$(j)⟩: [$ix_cutting, $(length(ddr_spectrum))]")
+    #     @warn "Possible rough smoothing with a single harmonic for ⟨$(i)|∂/∂R|$(j)⟩: [$ix_cutting, $(length(ddr_spectrum))]"
     # else
-    #     info("Harmonics cutted: [$ix_cutting, $(length(ddr_spectrum))]")
+    #     @info "Harmonics cutted: [$ix_cutting, $(length(ddr_spectrum))]"
     # end
     # ddr_spectrum[ix_cutting:end] = 0.0
     # ddr_sample = real(ifft(ddr_spectrum))
@@ -209,16 +207,15 @@ function diabatizeWithPartialMatrices(
     smoothed_∂_∂Rᵈ = matlupperx_ddr2matl(∂_∂Rᴰᵈᵃᵗᵃ)
     @assert size(∂_∂Rᵈ, 1) == size(smoothed_∂_∂Rᵈ, 1)
     @assert size(∂_∂Rᵈ, 2) == size(smoothed_∂_∂Rᵈ, 2)
-    info("Smoothed matrix ∂_∂Rᵈ length = $(length(smoothed_∂_∂Rᵈ))")
-    info("==========")
+    @info "Smoothed matrix ∂_∂Rᵈ length = $(length(smoothed_∂_∂Rᵈ))"
+    @info "=========="
 
-    info("Done.")
+    @info "Done."
     return Rᶜ, Sᵛᵉᶜ, Hᵈ, smoothed_∂_∂Rᵈ, ∂_∂Rᵐ
 end
 
 function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
   Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Matrix{Float64}}, use_prev_S_from::Nullable{Float64})
-  Logging.configure(level=INFO)
 
   #increasing_order = Rᵖᵒⁱⁿᵗˢ[1] < Rᵖᵒⁱⁿᵗˢ[end]
 
@@ -232,14 +229,14 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_�
   Sˡᵛᵉᶜ = invert_R ? Sˡ[end:-1:1] : Sˡ
   N = size(Sˡᵛᵉᶜ[1], 1)
   Sᵖʳᵉᵛ = Matrix{Float64}(undef, N, N)
-  info("Transforming matrix elements <|Ĥ|> and <|∂/∂R|> in interval [$(Rᵛᵉᶜ[1]), $(Rᵛᵉᶜ[end])]")
+  @info "Transforming matrix elements <|Ĥ|> and <|∂/∂R|> in interval [$(Rᵛᵉᶜ[1]), $(Rᵛᵉᶜ[end])]"
   for i = 1:Nᵖᵒⁱⁿᵗˢ
     R = Rᵛᵉᶜ[i]
     # ----
     use_prev_solution = !(isnull(use_prev_S_from) || (R > get(use_prev_S_from)))
     S = isnull(use_prev_S_from) || (R > get(use_prev_S_from)) ? Sˡᵛᵉᶜ[i] : Sᵖʳᵉᵛ
     if use_prev_solution
-      info("Using previous transformation matrix at $R")
+      @info "Using previous transformation matrix at $R"
       S = round(S, 0)
     end
     S⁻¹ = S'
@@ -277,8 +274,7 @@ end
 
 function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2},
   Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, invert_R::Bool, Sˡ::Vector{Matrix{Float64}}, use_prev_S_from::Nullable{Float64})
-  Logging.configure(level=INFO)
-  info("Diabatization with a precomputed transformation matrix")
+  @info "Diabatization with a precomputed transformation matrix"
 
   #increasing_order = Rᵖᵒⁱⁿᵗˢ[1] < Rᵖᵒⁱⁿᵗˢ[end]
 
@@ -292,7 +288,7 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2},
   Sˡᵛᵉᶜ = invert_R ? Sˡ[end:-1:1] : Sˡ
   N = size(Sˡᵛᵉᶜ[1], 1)
   Sᵖʳᵉᵛ = Matrix{Float64}(undef, N, N)
-  info("Transforming matrix elements <|Ĥ|> and <|∂/∂R|> in interval [$(Rᵛᵉᶜ[1]), $(Rᵛᵉᶜ[end])]")
+  @info "Transforming matrix elements <|Ĥ|> and <|∂/∂R|> in interval [$(Rᵛᵉᶜ[1]), $(Rᵛᵉᶜ[end])]"
   progress = Progress(Nᵖᵒⁱⁿᵗˢ)
   for i = 1:Nᵖᵒⁱⁿᵗˢ
     R = Rᵛᵉᶜ[i]
@@ -300,7 +296,7 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2},
     S = isnull(use_prev_S_from) || (R > get(use_prev_S_from)) ? Sˡᵛᵉᶜ[i] : Sᵖʳᵉᵛ
     S⁻¹ = S'
     if !(isnull(use_prev_S_from) || (R > get(use_prev_S_from)))
-      info("Using previous transformation matrix at $R")
+      @info "Using previous transformation matrix at $R"
     end
     # ----
     ∇S = Dierckx.derivative.(S_spline, R; nu=1)
@@ -317,7 +313,7 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2},
     Hᵈ[i] = Hᴰ; ∂_∂Rᵈ[i] = ∂_∂Rᴰ
 
     Sᵖʳᵉᵛ = isnull(use_prev_S_from) || R > get(use_prev_S_from) ? S : Sᵖʳᵉᵛ
-    #info("Diabatization performed at the distance R = $R Bohr")
+    #@info "Diabatization performed at the distance R = $R Bohr"
     ProgressMeter.next!(progress; showvalues = [(:index, i), (:distance, "$R, Bohr")])
   end
   if invert_R
@@ -332,8 +328,6 @@ function transformationMatrix(Hₐ::Array{Function, 2},
   Rᵛ::Vector{Float64},
   S₀ᵒʷⁿ::Nullable{Matrix{Float64}},
   C::DiabatizationSettings)
-
-  Logging.configure(level=INFO)
 
   # -----------
   N = size(Hₐ, 1)
@@ -376,7 +370,7 @@ function transformationMatrix(Hₐ::Array{Function, 2},
 
 
   S₀ = isnull(S₀ᵒʷⁿ) ? eye(N, N) : get(S₀ᵒʷⁿ)
-  info("Going to solve a Cauchy probem with initial conditions:\n$(S₀);\ncustom conditions are $(isnull(S₀ᵒʷⁿ) ? "null" : "not null")")
+  @info "Going to solve a Cauchy probem with initial conditions:\n$(S₀);\ncustom conditions are $(isnull(S₀ᵒʷⁿ) ? "null" : "not null")"
   S, Sᵈᵃᵗᵃ = problemCauchy(
     Rᵖᵒⁱⁿᵗˢ, S₀;
     prod_function = diabatizationODE_function,

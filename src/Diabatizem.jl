@@ -2,7 +2,6 @@ module Diabatizem
 
 using JSON
 using DataFrames
-using Logging
 
 export Configuration
 export NonadiabaticArea, SinglePeakNonadiabaticArea

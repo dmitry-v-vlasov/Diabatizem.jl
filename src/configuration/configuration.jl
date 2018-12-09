@@ -156,16 +156,15 @@ function loadConfiguration(filePath::AbstractString)
 end
 
 function fixPotentialAsymptotics!(Hₐ_data::DataFrame, utilitySettings)
-  Logging.configure(level=INFO)
   if utilitySettings.channel_lowest_number < 0
-    info("Fixing channel asymptotics has been skept in the configuration loading stage.")
+    @info "Fixing channel asymptotics has been skept in the configuration loading stage."
     return
   end
   Nₚ = size(Hₐ_data, 1)
   Nᵩ = size(Hₐ_data, 2) - 1
   lowest_channel = utilitySettings.channel_lowest_number > 0 ? utilitySettings.channel_lowest_number : 1
   Uₗ_∞ = Hₐ_data[Nₚ, lowest_channel + 1]
-  info("Fixing chennel asymptotics with V₀ᴬ(∞)=$(Uₗ_∞).")
+  @info "Fixing chennel asymptotics with V₀ᴬ(∞)=$(Uₗ_∞)."
   for line = 1:Nₚ, channel = 1:Nᵩ
     Hₐ_data[line, channel + 1] = Hₐ_data[line, channel + 1] - Uₗ_∞
   end
@@ -221,7 +220,6 @@ function loadUtilitySettings(js)
 end
 
 function loadDiabatizationSettings(js)
-  Logging.configure(level=INFO)
   step_min = abs(js["coordinate-step"]["min"])
   step_max = abs(js["coordinate-step"]["max"])
   @assert step_min <= step_max

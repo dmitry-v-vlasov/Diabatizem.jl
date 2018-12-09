@@ -1,5 +1,4 @@
 using Roots
-using Logging
 
 import Optim
 using LsqFit
@@ -16,7 +15,6 @@ Reference:
 http://cyberleninka.ru/article/n/sechenie-vozbuzhdeniya-i-model-landau-zinera
 """
 function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}, 2})
-    Logging.configure(level=INFO)
   N = size(areas, 1)
   M_Αˡᶻ = Array{Array{LandauZenerArea, 1}, 2}(N, N)
   fill!(M_Αˡᶻ, Array{LandauZenerArea, 1}())
@@ -28,7 +26,7 @@ function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}
       R₀ = Α.coordinate_∂_∂R
       τₕ₀ = Α.value_∂_∂R; τ₀ = 1/(4τₕ₀)
 
-      info("Curve fitting for\n$Α...")
+      @info "Curve fitting for\n$Α..."
 
       model(R::Vector{Float64}, p::Vector{Float64}) = p[2] ./ ((R - p[1]).^2 + 4 * (p[2])^2)
      #  jacobian_model(R::Vector{Float64}, p::Vector{Float64}) = begin
@@ -41,15 +39,15 @@ function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}
       Rdata = Α.R_knots
       Fdata = Α.values_∂_∂R
       p₀ = [R₀, τ₀]
-      info("Initial parameters: R₀ = $(p₀[1]), τ₀ = $(p₀[2])")
+      @info "Initial parameters: R₀ = $(p₀[1]), τ₀ = $(p₀[2])"
       fit = LsqFit.curve_fit(model, Rdata, Fdata, p₀; maxIter = 10000)
       pₑ = fit.param
-      info("Best fit parameters: R₀ = $(pₑ[1]), τ₀ = $(pₑ[2])")
+      @info "Best fit parameters: R₀ = $(pₑ[1]), τ₀ = $(pₑ[2])"
       R₀ = pₑ[1]; τ₀ = pₑ[2]
 
       # if i == 8 && j == 9
       #     τ₀ = 1/(4*12275)
-      #     warn("Hacked $i, $j: τ₀ = $τ₀")
+      #     @warn "Hacked $i, $j: τ₀ = $τ₀"
       # end
 
       Αˡᶻ = LandauZenerArea(Α.states, R₀, τ₀, Rₐ, Rᵦ)
@@ -57,30 +55,29 @@ function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}
     end
   end
 
-  info()
-  info("=========== Landau-Zener Couplings Summary ======================")
+  @info ""
+  @info "=========== Landau-Zener Couplings Summary ======================"
   for i = 1:N, j=1:N
     if i < j && j - i == 1
-      info("*********** Landau-Zener Areas of ⟨$(i)|∂/∂R|$(j)⟩ ***********")
+      @info "*********** Landau-Zener Areas of ⟨$(i)|∂/∂R|$(j)⟩ ***********"
       for Αˡᶻᵛ in M_Αˡᶻ[i, j]
-        info(Αˡᶻᵛ)
+        @info Αˡᶻᵛ
       end
-      info("=======================================================")
+      @info "======================================================="
     end
   end
-  info("==================================================================")
+  @info "=================================================================="
 
   return M_Αˡᶻ
 end
 
 function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerArea}, 2})
-  Logging.configure(level=INFO)
 
   N = size(M_Αˡᶻ, 1)
   M_∂_∂Rˡᶻ = Array{Function, 2}(N, N)
   fill!(M_∂_∂Rˡᶻ, R -> 0.0)
 
-  info("𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏 Making Landau-Zener Coupling Functions 𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏")
+  @info "𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏 Making Landau-Zener Coupling Functions 𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏"
   for i = 1:N, j = 1:N
     areas = M_Αˡᶻ[i, j]
     areas_sorted = sort(areas, alg = InsertionSort, lt = (Α₁, Α₂) -> Α₁.R₀ < Α₂.R₀)
@@ -88,24 +85,24 @@ function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerA
     functions = Vector{Tuple{Float64, Float64, Function}}()
     breakpoints = Vector{Float64}(undef, 0)
     if L > 1
-      info("Piecewise Function for ⟨$(i)|∂/∂R|$(j)⟩; Intervals - $L")
+      @info "Piecewise Function for ⟨$(i)|∂/∂R|$(j)⟩; Intervals - $L"
       for k = 1:L-1
         Αₖ = areas_sorted[k]; Αₖ₁ = areas_sorted[k+1];
         Rᵃ = Αₖ.R₀; Rᵇ = Αₖ₁.R₀;
         Δ_∂_∂R(R) = abs(Αₖ.∂_∂R(R)) - abs(Αₖ₁.∂_∂R(R))
         if Δ_∂_∂R(Rᵃ)*Δ_∂_∂R(Rᵇ) > 0
-          warn("Cannot establish a breakpoint via root finding in interval [$Rᵃ, $Rᵇ], Δ(∂/∂R(Rᵃ))=$(Δ_∂_∂R(Rᵃ)), Δ(∂_∂R(Rᵇ))=$(Δ_∂_∂R(Rᵇ)); ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵃ)=$(Αₖ.∂_∂R(Rᵃ)), ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k+1))(Rᵇ)=$(Αₖ₁.∂_∂R(Rᵇ))")
+          @warn "Cannot establish a breakpoint via root finding in interval [$Rᵃ, $Rᵇ], Δ(∂/∂R(Rᵃ))=$(Δ_∂_∂R(Rᵃ)), Δ(∂_∂R(Rᵇ))=$(Δ_∂_∂R(Rᵇ)); ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵃ)=$(Αₖ.∂_∂R(Rᵃ)), ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k+1))(Rᵇ)=$(Αₖ₁.∂_∂R(Rᵇ))"
           abs_Δ_∂_∂R(R) = abs(Δ_∂_∂R(R))
           result = Optim.optimize(abs_Δ_∂_∂R, Rᵃ, Rᵇ, Optim.Brent())
           Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ = Optim.minimizer(result)
-          warn("Found minimum \"distance\" at R=$Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ; ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)), ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k+1))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ₁.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ))")
+          @warn "Found minimum \"distance\" at R=$Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ; ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)), ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k+1))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ₁.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ))"
           push!(breakpoints, Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)
         else
           Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ = fzero(Δ_∂_∂R, Rᵃ, Rᵇ)
           push!(breakpoints, Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)
         end
       end
-      info("Piecewise Function for ⟨$(i)|∂/∂R|$(j)⟩; Breakpoints: $breakpoints")
+      @info "Piecewise Function for ⟨$(i)|∂/∂R|$(j)⟩; Breakpoints: $breakpoints"
 
       Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗₚᵣₑᵥᵢₒᵤₛ = areas_sorted[1].Rₐ
       for k = 1:L-1
@@ -116,10 +113,10 @@ function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerA
       end
       push!(functions, (Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗₚᵣₑᵥᵢₒᵤₛ, areas_sorted[L].Rᵦ, areas_sorted[L].∂_∂R))
     elseif L == 1
-      info("Single Function for ⟨$(i)|∂/∂R|$(j)⟩")
+      @info "Single Function for ⟨$(i)|∂/∂R|$(j)⟩"
       push!(functions, (areas_sorted[1].Rₐ, areas_sorted[1].Rᵦ, areas_sorted[1].∂_∂R))
     else
-      info("Trivial Zero Function for ⟨$(i)|∂/∂R|$(j)⟩")
+      @info "Trivial Zero Function for ⟨$(i)|∂/∂R|$(j)⟩"
       push!(functions, (0.0, Inf, R -> 0.0))
     end
 
@@ -131,7 +128,7 @@ function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerA
 
     M_∂_∂Rˡᶻ[i, j] = ∂_∂Rᵖⁱᵉᶜᵉʷⁱˢᵉ
   end
-  info("𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏")
+  @info "𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏"
 
   return M_∂_∂Rˡᶻ
 end
