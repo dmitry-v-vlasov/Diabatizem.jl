@@ -7,7 +7,7 @@ import Base.show
 import Base.-
 
 # ----------- calculation results -----------
-abstract Calculation
+abstract type Calculation end
 
 # ----------- asymptotics -----------
 mutable struct PotentialAsymptotic <: Calculation
@@ -30,7 +30,7 @@ end
 # ----------- asymptotics -----------
 
 # ----------- non-adiabatic areas -----------
-abstract NonadiabaticArea <: Calculation
+abstract type NonadiabaticArea <: Calculation end
 function show(io::IO, Aᵛ::Vector{NonadiabaticArea})
   content = join(collect("$(A)" for A in Aᵛ), ",\n")
   print(io, "Α{$content}")

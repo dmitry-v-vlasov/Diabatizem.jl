@@ -6,7 +6,7 @@ using Nullables
 import Dierckx
 import Sundials
 
-abstract AreaSystem
+abstract type AreaSystem end
 
 mutable struct AreaBunch <: AreaSystem
     states::Vector{Int}
