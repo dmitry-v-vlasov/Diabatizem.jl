@@ -94,11 +94,11 @@ function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerA
         Rᵃ = Αₖ.R₀; Rᵇ = Αₖ₁.R₀;
         Δ_∂_∂R(R) = abs(Αₖ.∂_∂R(R)) - abs(Αₖ₁.∂_∂R(R))
         if Δ_∂_∂R(Rᵃ)*Δ_∂_∂R(Rᵇ) > 0
-          warn("Cannot establish a breakpoint via root finding in interval [$Rᵃ, $Rᵇ], Δ(∂/∂R(Rᵃ))=$(Δ_∂_∂R(Rᵃ)), Δ(∂_∂R(Rᵇ))=$(Δ_∂_∂R(Rᵇ)); ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵃ)=$(Αₖ.∂_∂R(Rᵃ)), ⟨$i|∂/∂R|$j⟩$(int2indexsub(k+1))(Rᵇ)=$(Αₖ₁.∂_∂R(Rᵇ))")
+          warn("Cannot establish a breakpoint via root finding in interval [$Rᵃ, $Rᵇ], Δ(∂/∂R(Rᵃ))=$(Δ_∂_∂R(Rᵃ)), Δ(∂_∂R(Rᵇ))=$(Δ_∂_∂R(Rᵇ)); ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵃ)=$(Αₖ.∂_∂R(Rᵃ)), ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k+1))(Rᵇ)=$(Αₖ₁.∂_∂R(Rᵇ))")
           abs_Δ_∂_∂R(R) = abs(Δ_∂_∂R(R))
           result = Optim.optimize(abs_Δ_∂_∂R, Rᵃ, Rᵇ, Optim.Brent())
           Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ = Optim.minimizer(result)
-          warn("Found minimum \"distance\" at R=$Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ; ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)), ⟨$i|∂/∂R|$j⟩$(int2indexsub(k+1))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ₁.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ))")
+          warn("Found minimum \"distance\" at R=$Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ; ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)), ⟨$(i)|∂/∂R|$(j)⟩$(int2indexsub(k+1))(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)=$(Αₖ₁.∂_∂R(Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ))")
           push!(breakpoints, Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ)
         else
           Rᵇʳᵉᵃᵏᵖᵒⁱⁿᵗ = fzero(Δ_∂_∂R, Rᵃ, Rᵇ)
