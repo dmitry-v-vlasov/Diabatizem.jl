@@ -71,10 +71,10 @@ function fitLandauZenerCouplings(areas::Matrix{Vector{SinglePeakNonadiabaticArea
   return M_Αˡᶻ
 end
 
-function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Array{Vector{LandauZenerArea}, 2})
+function deriveLandauZenerCouplingFunctions(M_Αˡᶻ::Matrix{Vector{LandauZenerArea}})
 
   N = size(M_Αˡᶻ, 1)
-  M_∂_∂Rˡᶻ = Array{Function, 2}(N, N)
+  M_∂_∂Rˡᶻ = Matrix{Function}(undef, N, N)
   fill!(M_∂_∂Rˡᶻ, R -> 0.0)
 
   @info "𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏 Making Landau-Zener Coupling Functions 𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏𝔏"
