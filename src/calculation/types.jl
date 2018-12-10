@@ -96,6 +96,9 @@ mutable struct LandauZenerArea <: NonadiabaticArea
     return this
   end
 end
+function show(io::IO, mime::AbstractString, A::LandauZenerArea)
+  show(io, A)
+end
 function show(io::IO, A::LandauZenerArea)
   i = A.states[1]; iˢᵘᵇ = int2indexsub(i); iᵐᵒˡ = int2molstate(i)
   j = A.states[2]; jˢᵘᵇ = int2indexsub(j); jᵐᵒˡ = int2molstate(j)
