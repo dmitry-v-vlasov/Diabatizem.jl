@@ -115,7 +115,7 @@ function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Matrix{Fl
     write(fos, "=======================================================\n")
     write(fos, "R = $Rˡ\n")
     write(fos, "-----------\n")
-    write(fos, takebuf_string(buf))
+    write(fos, String(take!(buf)))
     write(fos, "\n")
   end
   flush(fos)

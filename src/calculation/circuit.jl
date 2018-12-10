@@ -58,5 +58,5 @@ function toStringPotentialAsymptotics(asymptotics::Array{PotentialAsymptotic})
     print(buff, "{$(ψ)→$(⚛⚛_STATES[ψ]): U(∞)=$(U_∞); Rₐ=$(Rₐ)}")
     print(buff, "\n")
   end
-  return takebuf_string(buff)
+  return String(take!(buffer))
 end

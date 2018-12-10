@@ -43,13 +43,13 @@ const sigmoid = (x, x₀, α) -> 1/(1+exp(-(x - x₀)/α))
 function mat2string(M::Matrix{Float64})
     io = IOBuffer()
     Base.showarray(io, M, false)
-    return takebuf_string(io)
+    return String(take!(io))
 end
 
 function mat2string(M::Array{Function, 2})
     io = IOBuffer()
     Base.showarray(io, M, false)
-    return takebuf_string(io)
+    return String(take!(io))
 end
 
 function load_data(file::AbstractString; header=true)
@@ -462,7 +462,7 @@ function int2indexsub(i::Int)
   for d in ds
     print(buffer, INT_SUBSCRIPT[d])
   end
-  return takebuf_string(buffer)
+  return String(take!(buffer))
 end
 
 function int2molstate(i::Int)
