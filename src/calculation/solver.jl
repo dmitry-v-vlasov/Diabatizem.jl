@@ -14,7 +14,7 @@ function diabatize(
     solutions::Vector{LocalSolution}, C::DiabatizationSettings, LZ::Array{Array{LandauZenerArea, 1}, 2})
     @info "**************************************************"
     @info "Diabatizing..."
-    R = unique(sort(collect(Base.flatten(map(solution->solution.points, solutions)))))
+    R = unique(sort(collect(Iterators.flatten(map(solution->solution.points, solutions)))))
     @info "Derived grid: [$(R[1]) ... $(R[end])] ($(length(R)))"
     @assert issorted(R)
     steps = R[2:end] - R[1:end-1]

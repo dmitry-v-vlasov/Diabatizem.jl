@@ -21,11 +21,11 @@ function solverTransformationMatrixForAreas(
     areas::Array{Vector{SinglePeakNonadiabaticArea}, 2},
     ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
     Rᵛ::Vector{Float64}, C::DiabatizationSettings)
-    @info "==== Starting selective transformation matrix solving ==="
+    @info "==== Starting selective transformation matrix solving ===";
     given_areas =
         sort(
             collect(
-                Base.flatten(
+                Iterators.flatten(
                     filter(
                         vAⁱʲ -> !isempty(vAⁱʲ) && vAⁱʲ[1].states[1] < vAⁱʲ[1].states[2], areas)));
             by = A -> A.coordinate_∂_∂R, rev = true)
@@ -130,7 +130,7 @@ function solverTransformationMatrixForAreas(
         end
         Rᵇ⁻ˡ = minimum(map(Aᵇ -> Aᵇ.coordinate_from, bunch_of_areas))
         Rᵇ⁻ʳ = maximum(map(Aᵇ -> Aᵇ.coordinate_to, bunch_of_areas))
-        states_Aᵇ = sort(unique(Base.flatten(map(Aᵇ -> Aᵇ.states, bunch_of_areas))))
+        states_Aᵇ = sort(unique(Iterators.flatten(map(Aᵇ -> Aᵇ.states, bunch_of_areas))))
         new_bunch = AreaBunch(states_Aᵇ, bunch_of_areas, Rᵇ⁻ˡ, Rᵇ⁻ʳ)
         #@info "New area bunch: $new_bunch"
         push!(bunches, new_bunch)
