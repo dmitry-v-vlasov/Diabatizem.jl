@@ -57,7 +57,7 @@ function solverTransformationMatrixForAreas(
         Rᵏ⁻ˡ = Aᵏ.coordinate_from; Rᵏ⁻ʳ = Aᵏ.coordinate_to
         @assert(Rᵏ⁻ˡ < Rᵏ⁻ʳ, "Violated Rᵏ⁻ˡ < Rᵏ⁻ʳ: $Rᵏ⁻ˡ < $Rᵏ⁻ʳ")
         states_Aᵏ = Aᵏ.states
-        extras_key_k = (states_Aᵏ[1], states_Aᵏ[2], floor(Aᵏ.coordinate_∂_∂R, 1))
+        extras_key_k = (states_Aᵏ[1], states_Aᵏ[2], round(Aᵏ.coordinate_∂_∂R, Base.RoundDown; digits=1))
         extras_Aᵏ = sel_area_extras[extras_key_k]
         Rᵏ⁻ˡᵉ = Rᵏ⁻ˡ - extras_Aᵏ[1]; Rᵏ⁻ʳᵉ = Rᵏ⁻ʳ + extras_Aᵏ[2];
         #@info "R-Extras for $extras_key_k ⇒ $extras_Aᵏ; Interval becomes [$Rᵏ⁻ˡᵉ, $Rᵏ⁻ʳᵉ] "
@@ -73,7 +73,7 @@ function solverTransformationMatrixForAreas(
                         states_Aʲ = Aʲ.states
                         Rʲ⁻ˡ = Aʲ.coordinate_from; Rʲ⁻ʳ = Aʲ.coordinate_to
                         if states_Aʲ == states_Aᵏ || states_Aʲ[1] == states_Aᵏ[2] || states_Aʲ[2] == states_Aᵏ[1]
-                            extras_key_j = (states_Aʲ[1], states_Aʲ[2], floor(Aʲ.coordinate_∂_∂R, 1))
+                            extras_key_j = (states_Aʲ[1], states_Aʲ[2], round(Aʲ.coordinate_∂_∂R, Base.RoundDown; digits=1))
                             extras_Aʲ = sel_area_extras[extras_key_j]
                             Rʲ⁻ˡᵉ = Rʲ⁻ˡ - extras_Aʲ[1]; Rʲ⁻ʳᵉ = Rʲ⁻ʳ + extras_Aʲ[2];
 
@@ -153,7 +153,7 @@ function solverTransformationMatrixForAreas(
         extra_lengths = Vector{Tuple{Float64, Float64}}()
         foreach(
             Aᵇ -> begin
-                extras_key_b = (Aᵇ.states[1], Aᵇ.states[2], floor(Aᵇ.coordinate_∂_∂R, 1))
+                extras_key_b = (Aᵇ.states[1], Aᵇ.states[2], round(Aᵇ.coordinate_∂_∂R, Base.RoundDown; digits=1))
                 @info "Trying key: $extras_key_b"
                 extras_Aᵇ = sel_area_extras[extras_key_b]
                 @info "Key result: $extras_Aᵇ"
