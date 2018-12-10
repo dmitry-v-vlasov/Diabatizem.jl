@@ -51,7 +51,7 @@ function diabatizeWithPartialMatrices(
     @info "Full transformation matrix computation..."
     Sᵛ = Vector{Matrix{Float64}}(undef, 0)
     for R ∈ Rᶜ
-        S = eye(N, N)
+        S = Matrix{Float64}(I, N, N)
         for i = 1:Nˡ
             Sⁱ = matf2mat(R, Sᶠ[i])
             S = S * Sⁱ
@@ -373,7 +373,7 @@ function transformationMatrix(Hₐ::Array{Function, 2},
 
 
 
-  S₀ = isnull(S₀ᵒʷⁿ) ? eye(N, N) : get(S₀ᵒʷⁿ)
+  S₀ = isnull(S₀ᵒʷⁿ) ? Matrix{Float64}(I, N, N) : get(S₀ᵒʷⁿ)
   @info "Going to solve a Cauchy probem with initial conditions:\n$(S₀);\ncustom conditions are $(isnull(S₀ᵒʷⁿ) ? "null" : "not null")"
   S, Sᵈᵃᵗᵃ = problemCauchy(
     Rᵖᵒⁱⁿᵗˢ, S₀;

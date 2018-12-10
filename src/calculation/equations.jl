@@ -1,6 +1,7 @@
 using Calculus
 using ProgressMeter
 using Nullables
+using LinearAlgebra
 
 import Dierckx
 import Sundials
@@ -177,7 +178,7 @@ function solverTransformationMatrixForAreas(
         ∂_∂Rᵐᵒᵈᵉˡ⁻ˡᵒᶜ = Array{Function, 2}(view_∂_∂Rᵐᵒᵈᵉˡ⁻ˡᵒᶜ)
         @info "Check: $(∂_∂Rˡᵒᶜ)"
         @info "The local solution size is $(Nˡᵒᶜ)×$(Nˡᵒᶜ)."
-        S₀ˡᵒᶜ = eye(Nˡᵒᶜ, Nˡᵒᶜ)
+        S₀ˡᵒᶜ = Matrix{Float64}(I, Nˡᵒᶜ, Nˡᵒᶜ)
 
         if C.keep_initial_conditions
             if haskey(last_matrices, states)
@@ -215,7 +216,7 @@ function solverTransformationMatrixForAreas(
         @info "Extending the solution matrix size from $(Nˡᵒᶜ)×$(Nˡᵒᶜ) to $N×$N"
         ext_S = Vector{Matrix{Float64}}(undef, 0)
         for l ∈ 1:length(Rᵖᵒⁱⁿᵗˢ)
-            ext_Sˡ = eye(N, N)
+            ext_Sˡ = Matrix{Float64}(I, N, N)
             for i = s¹:s², j = s¹:s²
                 ext_Sˡ[i, j] = S[l][i - s¹ + 1, j - s¹ + 1]
             end
@@ -305,7 +306,7 @@ function transformationMatrixForArea(
   # -----------
 
 
-  S₀ = isnull(S₀ᵒʷⁿ) ? eye(N, N) : get(S₀ᵒʷⁿ)
+  S₀ = isnull(S₀ᵒʷⁿ) ? Matrix{Float64}(I, N, N) : get(S₀ᵒʷⁿ)
   @info "Going to solve a Cauchy problem with initial conditions:\n$(mat2string(S₀));\ncustom conditions are $(isnull(S₀ᵒʷⁿ) ? "null" : "not null")"
   @info "The size N = $N"
   S, Sᵈᵃᵗᵃ = problemCauchy(
