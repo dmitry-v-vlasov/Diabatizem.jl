@@ -2,6 +2,7 @@ using Calculus
 using ProgressMeter
 using Combinatorics
 using Nullables
+using FFTW
 
 using PolynomialRoots
 
