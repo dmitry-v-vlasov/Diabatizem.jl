@@ -8,6 +8,8 @@ using PolynomialRoots
 
 import Dierckx
 import NumericalIntegration
+import Statistics
+const Sts = Statistics
 
 function diabatize(
     Hₐ::Array{Function, 2},
@@ -168,7 +170,7 @@ function diabatizeWithPartialMatrices(
                             Lᵉᵈᵍᵉ = floor(Int, Lˢ / 4)
                             ΔLˢ = abs(Lˢ - Lᵉᵈᵍᵉ)
                             high_f = filter(f -> abs(f) > 5.0, abs.(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
-                            mean_f = mean(abs.(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
+                            mean_f = Sts.mean(abs.(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
                             if length(high_f) / ΔLˢ > 0.4 && mean_f > 5.0
                                 ϵ_τ = 0.005
                                 ΔRˢᵐ = 2 * abs(τ₀) * √((1 - ϵ_τ) / ϵ_τ)
