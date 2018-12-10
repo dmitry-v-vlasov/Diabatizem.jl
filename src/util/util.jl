@@ -54,7 +54,7 @@ end
 
 function load_data(file::AbstractString; header=true)
   return DataFrame(load(file;
-    delim=' ', spacedelim=true, header_exists=header))
+    spacedelim=true, header_exists=header))
 end
 
 function save_data(data::DataFrame, file::AbstractString; header=true)
@@ -63,7 +63,7 @@ end
 
 function load_data(file::AbstractString; header=true)
   return DataFrame(load(file;
-    delim=' ', spacedelim=true, header_exists=header))
+    spacedelim=true, header_exists=header))
 end
 
 function save_data(data::DataFrame, file::AbstractString; header=true)

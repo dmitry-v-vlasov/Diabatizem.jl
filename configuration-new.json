@@ -1,8 +1,8 @@
 {
   "input-data": {
-    "hamiltonian-adiabatic": "/home/dmitry/Dropbox/CaH/original/CaH-pots-2017-01-09.dat",
-    "coupling_∂_∂R_adiabatic": "/home/dmitry/Dropbox/CaH/original/CaH-ddr-2016-07-01.dat",
-    "coupling_∂_∂R_adiabatic_model": "/home/dmitry/Dropbox/CaH/original/CaH-ddr-2016-07-01.dat",
+    "hamiltonian-adiabatic": "/home/dmitry/Dropbox/CaH/original/CaH-pots-2017-01-09.csv",
+    "coupling_∂_∂R_adiabatic": "/home/dmitry/Dropbox/CaH/original/CaH-ddr-2016-07-01.csv",
+    "coupling_∂_∂R_adiabatic_model": "/home/dmitry/Dropbox/CaH/original/CaH-ddr-2016-07-01.csv",
     "transformation-matrix-initial": "s-matrix.dsv",
     "transformation-matrix": "transformation-matrix.dsv"
   },

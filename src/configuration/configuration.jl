@@ -377,5 +377,5 @@ end
 
 function loadRawData(filePath::AbstractString)
   return DataFrame(load(filePath;
-    delim=' ', spacedelim=true, header_exists=true))
+    spacedelim=true, header_exists=true))
 end
