@@ -108,8 +108,7 @@ function show(io::IO, A::LandauZenerArea)
     format(fe,
       iˢᵘᵇ, '⋅', jˢᵘᵇ, sign, "Δˡᶻ", '→', '⟨', iᵐᵒˡ, jᵐᵒˡ, '⟩',
       '{',
-        "Rₐ", A.Rₐ, "Rᵦ", A.Rᵦ, "R₀", A.R₀, "τ₀", A.τ₀, "∂/∂R", A.∂_∂R,
-      '}'))
+      "Rₐ", A.Rₐ, "Rᵦ", A.Rᵦ, "R₀", A.R₀, "τ₀", A.τ₀, "∂/∂R", "func", '}'))
 end
 # ----------- non-adiabatic areas -----------
 

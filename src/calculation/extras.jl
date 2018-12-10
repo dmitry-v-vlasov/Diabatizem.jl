@@ -271,7 +271,7 @@ function solutionBoundaryPoints(
         kᵉ = k; kₘ = ceil(Int, (k - 1) * (1 - 1 / golden))
         kₘ = kₘ > 1 ? kₘ : 1
 
-        ΔS⁽⁰⁾ = abs(S[k] - S[1]); ΔS⁽⁰⁾ₘ = abs(S[kₘ] - S[1])
+        ΔS⁽⁰⁾ = abs.(S[k] - S[1]); ΔS⁽⁰⁾ₘ = abs.(S[kₘ] - S[1])
         ΔS⁽¹⁾ = ΔS⁽⁰⁾ / abs(R[k] - R[1]); ΔS⁽¹⁾ₘ = ΔS⁽⁰⁾ₘ / abs(R[kₘ] - R[1])
         #@info "R = $(R[k]), ΔS⁽⁰⁾ = $ΔS⁽⁰⁾, ΔS⁽¹⁾ = $ΔS⁽¹⁾\n"
         if all(s -> s > 0, ΔS⁽⁰⁾) && all(s -> s > 0, ΔS⁽¹⁾)
