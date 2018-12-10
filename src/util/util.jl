@@ -42,13 +42,13 @@ const sigmoid = (x, x₀, α) -> 1/(1+exp(-(x - x₀)/α))
 
 function mat2string(M::Matrix{Float64})
     io = IOBuffer()
-    Base.showarray(io, M, false)
     return String(take!(io))
+    Base.print_array(io, M)
 end
 
 function mat2string(M::Array{Function, 2})
     io = IOBuffer()
-    Base.showarray(io, M, false)
+    Base.print_array(io, M)
     return String(take!(io))
 end
 

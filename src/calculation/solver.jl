@@ -18,12 +18,12 @@ function diabatize(
     @info "Derived grid: [$(R[1]) ... $(R[end])] ($(length(R)))"
     @assert issorted(R)
     steps = R[2:end] - R[1:end-1]
-    h = minimum(abs(steps)); H = maximum(abs(steps))
+    h = minimum(abs.(steps)); H = maximum(abs.(steps))
     @info "Diabatizing in the interval [$(R[1]), $(R[end])] with hₘᵢₙ=$h, hₘₐₓ=$H"
     Rᶜ = clearGrid(R, 1e-10)
     empty!(steps)
     steps = Rᶜ[2:end] - Rᶜ[1:end-1]
-    h = minimum(abs(steps)); H = maximum(abs(steps))
+    h = minimum(abs.(steps)); H = maximum(abs.(steps))
     @info "Cleared grid [$(Rᶜ[1]), $(Rᶜ[end])] ($(length(Rᶜ))) with hₘᵢₙ=$h, hₘₐₓ=$H"
     @info "Making partial matrices"
     Sᶠ = Vector{Array{Function, 2}}()
@@ -158,7 +158,7 @@ function diabatizeWithPartialMatrices(
                             τ₁₂ = real(roots([γ, β, α]))
 
                             @info "Roots for [$R¹, - $R₀ - , $Rᵉ]: $(τ₁₂)"
-                            abs_max = findmax(abs(τ₁₂))
+                            abs_max = findmax(abs.(τ₁₂))
                             τ₀ = τ₁₂[abs_max[2]]
 
                             ddr_spectrum = fft(ddr_sample)
@@ -166,7 +166,7 @@ function diabatizeWithPartialMatrices(
                             Lᵉᵈᵍᵉ = floor(Int, Lˢ / 4)
                             ΔLˢ = abs(Lˢ - Lᵉᵈᵍᵉ)
                             high_f = filter(f -> abs(f) > 5.0, abs(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
-                            mean_f = mean(abs(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
+                            mean_f = mean(abs.(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
                             if length(high_f) / ΔLˢ > 0.4 && mean_f > 5.0
                                 ϵ_τ = 0.005
                                 ΔRˢᵐ = 2 * abs(τ₀) * √((1 - ϵ_τ) / ϵ_τ)
@@ -183,7 +183,7 @@ function diabatizeWithPartialMatrices(
                                 ∂_∂Rᴰᵈᵃᵗᵃ[l¹ˢ:lᵉˢ, k] = ddr_sample_new
                                 @info "!!!! - END smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!"
                             else
-                                @warn "Spectrum: $(abs(ddr_spectrum))"
+                                @warn "Spectrum: $(abs.(ddr_spectrum))"
                                 @warn "Skipped smoothing of the slow oscilating curve ⟨$(i)|∂/∂R|$(j)⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$(i)|∂/∂R|$(j)⟩dR = $It, [$R¹, $Rᵉ]"
                             end
                         end

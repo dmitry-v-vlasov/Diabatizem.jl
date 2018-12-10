@@ -240,8 +240,8 @@ function internalFunctions(
 end
 
 function argumentGrid(Rᴸ::Vector{Float64}, Rᴿ::Vector{Float64}, Rᵛ::Vector{Float64})
-    hᴸ = minimum(abs(Rᴸ[2:end] - Rᴸ[1:end-1])); Hᴸ = maximum(abs(Rᴸ[2:end] - Rᴸ[1:end-1]))
-    hᴿ = minimum(abs(Rᴿ[2:end] - Rᴿ[1:end-1])); Hᴿ = maximum(abs(Rᴿ[2:end] - Rᴿ[1:end-1]))
+    hᴸ = minimum(abs.(Rᴸ[2:end] - Rᴸ[1:end-1])); Hᴸ = maximum(abs.(Rᴸ[2:end] - Rᴸ[1:end-1]))
+    hᴿ = minimum(abs.(Rᴿ[2:end] - Rᴿ[1:end-1])); Hᴿ = maximum(abs.(Rᴿ[2:end] - Rᴿ[1:end-1]))
     ΔRᴸ = abs(Rᴸ[end] - Rᴸ[1])
     ΔRᴿ = abs(Rᴿ[end] - Rᴿ[1])
 
