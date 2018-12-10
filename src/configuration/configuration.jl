@@ -173,7 +173,8 @@ end
 
 function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputData)
   jss = js["settings"]
-  strategy_name = CalculationStrategy(deriveStrategy(jss["strategy"]))
+  strategy_name = deriveStrategy(jss["strategy"])
+  @info "Chosen calculation strategy: $strategy_name"
   if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name
     if haskey(js["input-data"], "coupling_∂_∂R_adiabatic_model")
       input_paths.file_coupling_∂_∂R_adiabatic_model = js["input-data"]["coupling_∂_∂R_adiabatic_model"]
