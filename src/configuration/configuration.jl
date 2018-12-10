@@ -2,6 +2,7 @@ using JSON
 using DataFrames
 using DataStructures
 using Nullables
+using CSVFiles
 
 mutable struct InputPaths
   file_hamiltonian_adiabatic::AbstractString
@@ -375,10 +376,6 @@ function deriveStrategy(strategyName::AbstractString)
 end
 
 function loadRawData(filePath::AbstractString)
-  return DataFrames.readtable(
-    filePath,
-    header = true, separator = ' ',
-    allowcomments = true, commentmark = '#',
-    skipblanks = true, encoding = :utf8, normalizenames = false
-  )
+  return DataFrame(load(filePath;
+    delim=' ', spacedelim=true, header_exists=true))
 end

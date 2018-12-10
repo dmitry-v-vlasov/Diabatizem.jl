@@ -1,6 +1,7 @@
 using Calculus
 using ProgressMeter
 using DataFrames
+using CSVFiles
 
 using PolynomialRoots
 
@@ -52,12 +53,8 @@ function mat2string(M::Array{Function, 2})
 end
 
 function load_data(file::AbstractString; header=true)
-  readtable(
-    file,
-    header = header, separator = ' ',
-    allowcomments = true, commentmark = '#',
-    skipblanks = true, encoding = :utf8, normalizenames = false
-  )
+  return DataFrame(load(file;
+    delim=' ', spacedelim=true, header_exists=header))
 end
 
 function save_data(data::DataFrame, file::AbstractString; header=true)
@@ -65,12 +62,8 @@ function save_data(data::DataFrame, file::AbstractString; header=true)
 end
 
 function load_data(file::AbstractString; header=true)
-  readtable(
-    file,
-    header = header, separator = ' ',
-    allowcomments = true, commentmark = '#',
-    skipblanks = true, encoding = :utf8, normalizenames = false
-  )
+  return DataFrame(load(file;
+    delim=' ', spacedelim=true, header_exists=header))
 end
 
 function save_data(data::DataFrame, file::AbstractString; header=true)
