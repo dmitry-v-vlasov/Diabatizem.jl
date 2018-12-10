@@ -28,7 +28,7 @@ function fitLandauZenerCouplings(areas::Matrix{Vector{SinglePeakNonadiabaticArea
 
       @info "Curve fitting for\n$Α..."
 
-      model(R::Vector{Float64}, p::Vector{Float64}) = p[2] ./ ((R - p[1]).^2 + 4 * (p[2])^2)
+      model(R::Vector{Float64}, p::Vector{Float64}) = p[2] ./ ((R .- p[1]).^2 .+ 4 * (p[2])^2)
      #  jacobian_model(R::Vector{Float64}, p::Vector{Float64}) = begin
      #    J = Matrix{Float64}(undef, length(R), length(p))
      #    J[:,1] = 2*p[2]*(R - p[1])./((R - p[1]).^2 + 4 * (p[2])^2).^2    #dmodel/dp[1]
