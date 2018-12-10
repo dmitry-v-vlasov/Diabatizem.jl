@@ -18,8 +18,8 @@ function show(io::IO, ab::AreaBunch)
 end
 
 function solverTransformationMatrixForAreas(
-    areas::Array{Vector{SinglePeakNonadiabaticArea}, 2},
-    ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2},
+    areas::Matrix{Vector{SinglePeakNonadiabaticArea}},
+    ∂_∂R::Matrix{Function}, ∂_∂Rᵐᵒᵈᵉˡ::Matrix{Function},
     Rᵛ::Vector{Float64}, C::DiabatizationSettings)
     @info "==== Starting selective transformation matrix solving ===";
     given_areas =
@@ -46,7 +46,7 @@ function solverTransformationMatrixForAreas(
     @info "$sel_area_extras"
     @info "\n------"
     ϵᵟᴿ = C.area_closeness
-    @info "Grouping the selected areas into bunches by their closeness within ϵᵟᴿ = $(ϵᵟᴿ) a.u.l."
+    @info "Grouping the selected areas into bunches by their closeness within ϵᵟᴿ = $(ϵᵟᴿ) a.u.l.";
     bunched_areas = Set{Int}()
     bunches = Vector{AreaBunch}(undef, 0)
     for k = 1:length(given_areas)
@@ -122,7 +122,7 @@ function solverTransformationMatrixForAreas(
                             return false
                         end
                     end,
-                    enumerate(remaining_areas)))
+                    collect(enumerate(remaining_areas))))
         bunch_of_areas = Vector{SinglePeakNonadiabaticArea}(undef, 0)
         push!(bunch_of_areas, Aᵏ)
         for remaining_area_from_bunch ∈ remaining_bunch_of_areas
@@ -283,7 +283,7 @@ function transformationMatrixForArea(
   progress = progressCreate(100, "Making R grid: ", :yellow); progressᶜ = 0
   Rᵖᵒⁱⁿᵗˢ = Vector{Float64}(undef, 0)
   Rₘᵢₙ = min(Rˢᵗᵃʳᵗ, Rˢᵗᵒᵖ); Rₘₐₓ = max(Rˢᵗᵃʳᵗ, Rˢᵗᵒᵖ)
-  R⃜ = filter(R -> Rₘᵢₙ<=R<=Rₘₐₓ, σR > 0 ? unique(Rᵛ) : reverse(unique(Rᵛ))); L = length(R⃜)
+  R⃜ = filter(R -> Rₘᵢₙ ≤ R ≤ Rₘₐₓ, σR > 0 ? unique(Rᵛ) : reverse(unique(Rᵛ))); L = length(R⃜)
   for l = 1:L-1
     Rˡ = R⃜[l]; Rˡ⁺¹ = R⃜[l + 1]
     R⃛ˡ = ℲR⃛ᵒᵖᵗ(Rˡ, Rˡ⁺¹, 2e-2, 1.2e4, ΔRₘᵢₙ, ΔRₘₐₓ)
