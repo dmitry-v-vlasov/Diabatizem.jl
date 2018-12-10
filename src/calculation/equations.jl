@@ -38,7 +38,7 @@ function solverTransformationMatrixForAreas(
     sel_area_bunch_exclude = Dict{Tuple{Int, Int, Float64}, Bool}()
     for sel_area ∈ C.areas
         s¹ = sel_area.states[1]; s² = sel_area.states[2]
-        sel_area_key = (s¹, s², floor(sel_area.coordinate, 1))
+        sel_area_key = (s¹, s², round(sel_area.coordinate, Base.RoundDown; digits=1))
         sel_area_extras[sel_area_key] = sel_area.extra_length
         sel_area_bunch_exclude[sel_area_key] = sel_area.bunch_exclude
     end
