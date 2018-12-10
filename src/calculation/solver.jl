@@ -159,7 +159,7 @@ function diabatizeWithPartialMatrices(
                             γ = - (Rᵉ - R₀) * (R₀ - R¹) / (Rᵉ - R¹)
                             @assert β^2 - 4 * α * γ > 0
 
-                            τ₁₂ = real(roots([γ, β, α]))
+                            τ₁₂ = real(PolynomialRoots.roots([γ, β, α]))
 
                             @info "Roots for [$R¹, - $R₀ - , $Rᵉ]: $(τ₁₂)"
                             abs_max = findmax(abs.(τ₁₂))

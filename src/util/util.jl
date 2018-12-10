@@ -160,7 +160,7 @@ function dataSizeOfSymetricMatrix(N::Int)
 end
 
 function sizeOfSymmetricUpperMatrix(Nˡ::Int)
-    roots = real(roots([-Nˡ, -0.5, 0.5]))
+    roots = real(PolynomialRoots.roots([-Nˡ, -0.5, 0.5]))
     @info "Roots for Nˡ=$Nˡ: $roots"
     @assert all(isreal, roots)
     N = maximum(filter(x -> x > 0, round.(Int, real(roots))))
