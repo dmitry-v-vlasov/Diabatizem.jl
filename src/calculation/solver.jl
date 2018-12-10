@@ -138,7 +138,8 @@ function diabatizeWithPartialMatrices(
                         if (i == states_ddr_ij[1] && j == states_ddr_ij[2]) && peak_found_at_R₀
                             @info "!!!! - START smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!"
                             @assert all(pair->pair[1] < pair[2], states_ddr)
-                            states_ddr_f = filter(states -> states[2] - states[1] == 1, combinations(collect(s¹:sᵉ), 2))
+                            # TODO: find out the sense of the below line
+                            states_ddr_f = filter(states -> states[2] - states[1] == 1, collect(combinations(collect(s¹:sᵉ), 2)))
 
                             @info "Smoothing area: $(LZ[i, j]) in interval [$R¹, $Rᵉ]"
                             l¹ = findlast(R -> R < R¹, ∂_∂R_arg); lᵉ = findlast(R -> R <= Rᵉ, ∂_∂R_arg)
@@ -165,7 +166,7 @@ function diabatizeWithPartialMatrices(
                             Lˢ = length(ddr_spectrum)
                             Lᵉᵈᵍᵉ = floor(Int, Lˢ / 4)
                             ΔLˢ = abs(Lˢ - Lᵉᵈᵍᵉ)
-                            high_f = filter(f -> abs(f) > 5.0, abs(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
+                            high_f = filter(f -> abs(f) > 5.0, abs.(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
                             mean_f = mean(abs.(ddr_spectrum[Lᵉᵈᵍᵉ:end]))
                             if length(high_f) / ΔLˢ > 0.4 && mean_f > 5.0
                                 ϵ_τ = 0.005
