@@ -6,7 +6,7 @@ function expandLocalSolutions(solutions::Vector{LocalSolution}, Rᵛ::Vector{Flo
         @info "Working with solution:\n$solution"
         S¹ = solution.S[1]; Sᵉ = solution.S[end]
         R¹ = solution.points[1]; Rᵉ = solution.points[end]
-        S¹ᵗ = round(S¹); Sᵉᵗ = round(Sᵉ)
+        S¹ᵗ = round.(S¹); Sᵉᵗ = round.(Sᵉ)
         Rᵛ¹ = Rᵛ[1]; Rᵛᵉ = Rᵛ[end]
         Svf = matl2matfsl(solution.points, solution.S)[1]
         @info "=========================================================================================="
@@ -198,14 +198,14 @@ function valuableFunctions(
         Sᴸ⁰[i, j] = Sᴸⁱⁿᵗ⁻ᶠ[i, j](Rᴸ⁰);
         Sᴿ⁰[i, j] = Sᴿⁱⁿᵗ⁻ᶠ[i, j](Rᴿ⁰);
     end
-    Sᴸ⁰ = round(Sᴸ⁰, 0); Sᴿ⁰ = round(Sᴿ⁰, 0)
+    Sᴸ⁰ = round.(Sᴸ⁰; digits=0); Sᴿ⁰ = round.(Sᴿ⁰; digits=0)
     #@info "Target matrix values:\nSᴸ⁰=\n$(mat2string(Sᴸ⁰))\nSᴿ⁰=\n$(mat2string(Sᴿ⁰))"
-    Sᴸ = Array{Function, 2}(N, N); Sᴿ = Array{Function, 2}(N, N)
+    Sᴸ = Matrix{Function}(undef, N, N); Sᴿ = Matrix{Function}(undef, N, N)
     for i=1:N, j = 1:N
         if i ∈ s¹:sᵉ && j ∈ s¹:sᵉ
             Sᴸ[i, j] = R -> begin
                 if R < Rᴸ⁰
-                    return round(Sᴸⁱⁿᵗ⁻ᶠ[i, j](Rᴸ⁰), 0)
+                    return round.(Sᴸⁱⁿᵗ⁻ᶠ[i, j](Rᴸ⁰); digits=0)
                 elseif Rᴸ⁰ <= R < Rᴸᵉ
                     return Sᴸⁱⁿᵗ⁻ᶠ[i, j](R)
                 elseif R >= Rᴸᵉ
@@ -218,7 +218,7 @@ function valuableFunctions(
                 elseif Rᴿ⁰ <= R < Rᴿᵉ
                     return Sᴿⁱⁿᵗ⁻ᶠ[i, j](R)
                 elseif R >= Rᴿᵉ
-                    return round(Sᴿⁱⁿᵗ⁻ᶠ[i, j](Rᴿᵉ), 0)
+                    return round.(Sᴿⁱⁿᵗ⁻ᶠ[i, j](Rᴿᵉ); digits=0)
                 end
             end
         else

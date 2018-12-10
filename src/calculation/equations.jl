@@ -241,7 +241,7 @@ function solverTransformationMatrixForAreas(
             peaks,
             ext_S, Sᵈᵃᵗᵃ);
         last_matrix = Matrix{Float64}(view(solution.S[1], s¹:s², s¹:s²))
-        last_matrices[states] = round(last_matrix)
+        last_matrices[states] = round.(last_matrix)
         @info "For the states ⟨$(states)⟩ the last matrix at R = $(solution.points[1]) is\n$(mat2string(last_matrix))\nrounded to\n$(mat2string(last_matrices[states]))"
         push!(solutions, solution)
         @info "Done"

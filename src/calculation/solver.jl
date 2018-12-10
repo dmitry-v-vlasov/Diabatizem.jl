@@ -197,7 +197,7 @@ function diabatizeWithPartialMatrices(
 
     # ddr_spectrum = fft(ddr_sample)
     # Lˢ = length(ddr_spectrum)
-    # ix_cutting = round(Int, Lˢ/80)
+    # ix_cutting = round.(Int, Lˢ/80)
     # ix_cutting = ix_cutting ≥ 1 ? ix_cutting : 1
     # if ix_cutting <= 2
     #     @warn "Possible rough smoothing with a single harmonic for ⟨$(i)|∂/∂R|$(j)⟩: [$ix_cutting, $(length(ddr_spectrum))]"
@@ -241,7 +241,7 @@ function diabatize(Hₐ::Array{Function, 2}, ∂_∂R::Array{Function, 2}, ∂_�
     S = isnull(use_prev_S_from) || (R > get(use_prev_S_from)) ? Sˡᵛᵉᶜ[i] : Sᵖʳᵉᵛ
     if use_prev_solution
       @info "Using previous transformation matrix at $R"
-      S = round(S, 0)
+      S = round.(S; digits=0)
     end
     S⁻¹ = S'
     # ----

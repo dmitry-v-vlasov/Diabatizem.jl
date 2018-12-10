@@ -163,7 +163,7 @@ function sizeOfSymmetricUpperMatrix(Nˡ::Int)
     roots = real(roots([-Nˡ, -0.5, 0.5]))
     @info "Roots for Nˡ=$Nˡ: $roots"
     @assert all(isreal, roots)
-    N = maximum(filter(x -> x > 0, round(Int, real(roots))))
+    N = maximum(filter(x -> x > 0, round.(Int, real(roots))))
     L = dataSizeOfSymetricMatrix(N)
     @assert(L == Nˡ, "$L≠$Nˡ")
     return N
@@ -292,7 +292,7 @@ function matdata2matl(data::DataFrame)
   X = collect(data[:,1])
   Nᵖᵒⁱⁿᵗˢ = size(data, 1)
   L = size(data, 2) - 1
-  N = round(Int, √L)
+  N = round.(Int, √L)
   @assert N*N == L
   Y = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
   for k = 1:Nᵖᵒⁱⁿᵗˢ
