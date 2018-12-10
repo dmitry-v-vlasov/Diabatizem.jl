@@ -14,12 +14,12 @@ Reference:
 Выпуск № 15 / том 6 / 2006
 http://cyberleninka.ru/article/n/sechenie-vozbuzhdeniya-i-model-landau-zinera
 """
-function fitLandauZenerCouplings(areas::Array{Vector{SinglePeakNonadiabaticArea}, 2})
+function fitLandauZenerCouplings(areas::Matrix{Vector{SinglePeakNonadiabaticArea}})
   N = size(areas, 1)
-  M_Αˡᶻ = Array{Array{LandauZenerArea, 1}, 2}(N, N)
-  fill!(M_Αˡᶻ, Array{LandauZenerArea, 1}())
+  M_Αˡᶻ = Matrix{Vector{LandauZenerArea}}(undef, N, N)
+  fill!(M_Αˡᶻ, Vector{LandauZenerArea}(undef, 0))
   for i = 1:N, j = 1:N
-    M_Αˡᶻ[i, j] = Array{LandauZenerArea, 1}()
+    M_Αˡᶻ[i, j] = Vector{LandauZenerArea}(undef, 0)
     ∂_∂R_areas = areas[i, j]
     for Α in ∂_∂R_areas
       Rₐ = Α.coordinate_from; Rᵦ = Α.coordinate_to
