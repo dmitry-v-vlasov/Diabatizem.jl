@@ -135,7 +135,7 @@ function detectSinglePeakAreas(M_∂_∂R::Matrix{Function},
             M = max(M, yₖ)
             s = 1
           else
-            for l in convert(Vector{Int}, linspace(k-1, 1, k-1))
+            for l in convert(Vector{Int}, range(k-1, stop=1, length=k-1))
               xₗ = table[l][1]; yₗ = table[l][2]
               if yₗ < Mₑ
                 # -----------
@@ -166,7 +166,7 @@ function detectSinglePeakAreas(M_∂_∂R::Matrix{Function},
             m = min(m, yₖ)
             s = -1
           else
-            for l in convert(Vector{Int}, linspace(k-1, 1, k-1))
+            for l in convert(Vector{Int}, range(k-1, stop=1, length=k-1))
               xₗ = table[l][1]; yₗ = table[l][2]
               if yₗ > mₑ
                 # -----------
