@@ -61,7 +61,9 @@ function fitLandauZenerCouplings(areas::Matrix{Vector{SinglePeakNonadiabaticArea
     if i < j && j - i == 1
       @info "*********** Landau-Zener Areas of ⟨$(i)|∂/∂R|$(j)⟩ ***********"
       for Αˡᶻᵛ in M_Αˡᶻ[i, j]
-        @info "$(Αˡᶻᵛ)"
+        @info "~~~~"
+        println(Αˡᶻᵛ)
+        @info "~~~~"
       end
       @info "======================================================="
     end
