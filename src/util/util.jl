@@ -319,8 +319,8 @@ function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Matrix{Float64}}; behaviour
   L = length(X)
   N = size(Mˡ[1], 1)
   Mᵈᵃᵗᵃ = matl2mdata(Mˡ)
-  Mᶠ = Array{Function, 2}(N, N)
-  M_spline = Array{Dierckx.Spline1D, 2}(N, N)
+  Mᶠ = Matrix{Function}(undef, N, N)
+  M_spline = Matrix{Dierckx.Spline1D}(undef, N, N)
   for k = 1:N*N
     Y = Mᵈᵃᵗᵃ[:, k]
     i, j = mpos(k, N)

@@ -144,11 +144,11 @@ end
 
 function boundaryFunctions(
     Rᴸ::Vector{Float64}, Rᴿ::Vector{Float64},
-    Sᴸᵛ::Array{Function, 2}, Sᴿᵛ::Array{Function, 2},
-    Sᴸᵈ::Array{Function, 2}, Sᴿᵈ::Array{Function, 2})
+    Sᴸᵛ::Matrix{Function}, Sᴿᵛ::Matrix{Function},
+    Sᴸᵈ::Matrix{Function}, Sᴿᵈ::Matrix{Function})
     @info "Making boundary functions."
     N = size(Sᴸᵛ, 1);
-    Sᴸ = Array{Function, 2}(N, N); Sᴿ = Array{Function, 2}(N, N)
+    Sᴸ = Matrix{Function}(undef, N, N); Sᴿ = Matrix{Function}(undef, N, N)
 
     for i = 1:N, j = 1:N
         # ----
@@ -175,7 +175,7 @@ end
 
 function dummyFunctions(
     S¹ᵗ::Matrix{Float64}, Sᵉᵗ::Matrix{Float64}, N::Int)
-    Sᴸ = Array{Function, 2}(N, N); Sᴿ = Array{Function, 2}(N, N)
+    Sᴸ = Matrix{Function}(undef, N, N); Sᴿ = Matrix{Function}(undef, N, N)
     for i = 1:N, j = 1:N
         Sᴸ[i, j] = R -> S¹ᵗ[i, j]
         Sᴿ[i, j] = R -> Sᵉᵗ[i, j]
@@ -335,8 +335,8 @@ function calculate∂²_∂R²(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
 
     ∂²_∂R²ᴰᵈᵃᵗᵃ = Matrix{Float64}(undef, L, M)
     ∂²_∂R²ᴰᵈᵃᵗᵃ_diag = Matrix{Float64}(undef, L, N)
-    ∂_∂Rᴰᵈᵃᵗᵃ_func = Array{Function, 2}(undef, N, N)
-    ∂_∂Rᴰᵈᵃᵗᵃ_spl = Array{Dierckx.Spline1D, 2}(undef, N, N)
+    ∂_∂Rᴰᵈᵃᵗᵃ_func = Matrix{Function}(undef, N, N)
+    ∂_∂Rᴰᵈᵃᵗᵃ_spl = Matrix{Dierckx.Spline1D}(undef, N, N)
     lᵖ = 1
     for i=1:N, j=i+1:N
       l = dataColumnOfSymetricMatrix(i, j, N)
