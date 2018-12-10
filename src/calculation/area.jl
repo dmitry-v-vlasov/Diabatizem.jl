@@ -242,7 +242,7 @@ function detectSinglePeakAreas(M_∂_∂R::Matrix{Function},
 
   for i = 1:N, j = 1:N
     if i > j && i - j == 1
-      if (!isdefined(areas[j, i]) || isempty(areas[j, i])) continue end
+      if (!isassigned(areas, j, i) || isempty(areas[j, i])) continue end
       K = length(areas[j, i])
       conjugate_areas = Vector{NonadiabaticArea}(undef, 0)
       setindex!(areas, i, j, conjugate_areas)
