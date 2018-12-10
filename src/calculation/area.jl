@@ -338,6 +338,7 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
     lz_areas_filtered = Array{Vector{SinglePeakNonadiabaticArea}, 2}(undef, N, N)
     fill!(lz_areas_filtered, Vector{SinglePeakNonadiabaticArea}(undef, 0))
     ϵᴿ = 0.2
+    @info "Selected areas to filter:\n$(selected_areas)"
     for i = 1:N, j = 1:N
         lz_ij = lz_areas[i, j]
         if isempty(lz_ij)
@@ -353,11 +354,11 @@ function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadia
                             a_i = i < j ? s_area.states[1] : s_area.states[2];
                             a_j = i < j ? s_area.states[2] : s_area.states[1];
                             R₀ₛ = s_area.coordinate
-                            #@info "Cheking: a_i = $a_i, a_j = $a_j, i = $i, j = $j, |R₀ - R₀ₛ| = $(abs(R₀ - R₀ₛ))"
+                            #@warn "Cheking: a_i = $a_i, a_j = $a_j, i = $i, j = $j, |R₀ - R₀ₛ| = $(abs(R₀ - R₀ₛ)), ϵᴿ = $ϵᴿ"
                             return a_i == i && a_j == j && abs(R₀ - R₀ₛ) <= ϵᴿ
                         end,
                         selected_areas)
-                    return ix_s_area > 0
+                    return ix_s_area ≠ nothing
                 end,
                 lz_ij)
             @info "Size of filtered areas for for ⟨$(i)|∂/∂R|$(j)⟩ - $(length)"

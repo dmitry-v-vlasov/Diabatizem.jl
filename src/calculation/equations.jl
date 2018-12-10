@@ -190,12 +190,12 @@ function solverTransformationMatrixForAreas(
                     entries = collect(last_matrices)
                     ix_lower = findfirst(entry -> entry[1][end] == states[1], entries)
                     ix_upper = findfirst(entry -> entry[1][1] == states[2], entries)
-                    if ix_upper ≠ 0
+                    if ix_upper ≠ nothing
                         Sᵁᵖ = entries[ix_upper][2]
                         @info "There exists a previous solution for the state |$(states[2])⟩: $(Sᵁᵖ[1, 1]) (upper)"
                         S₀ˡᵒᶜ[end, end] = Sᵁᵖ[1, 1]
                     end
-                    if ix_lower ≠ 0
+                    if ix_lower ≠ nothing
                         Sᴸᵒ = entries[ix_lower][2]
                         @info "There exists a previous solution for the state |$(states[1])⟩: $(Sᴸᵒ[end, end]) (lower)"
                         S₀ˡᵒᶜ[1, 1] = Sᴸᵒ[end, end]

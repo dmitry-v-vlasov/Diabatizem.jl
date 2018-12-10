@@ -134,7 +134,7 @@ function diabatizeWithPartialMatrices(
                         ΔR = abs(Rᵉ - R¹)
                         R¹ = R¹ - ΔR; Rᵉ = Rᵉ + ΔR;
                         peaks = sol.peaks
-                        peak_found_at_R₀ = findfirst(peak->abs(peak[1] - R₀) < 1e-1, peaks) > 0
+                        peak_found_at_R₀ = findfirst(peak->abs(peak[1] - R₀) < 1e-1, peaks) ≠ nothing
                         if (i == states_ddr_ij[1] && j == states_ddr_ij[2]) && peak_found_at_R₀
                             @info "!!!! - START smoothing ⟨$(i)|∂/∂R|$(j)⟩ - !!!!"
                             @assert all(pair->pair[1] < pair[2], states_ddr)
@@ -142,6 +142,8 @@ function diabatizeWithPartialMatrices(
 
                             @info "Smoothing area: $(LZ[i, j]) in interval [$R¹, $Rᵉ]"
                             l¹ = findlast(R -> R < R¹, ∂_∂R_arg); lᵉ = findlast(R -> R <= Rᵉ, ∂_∂R_arg)
+                            @assert l¹ ≠ nothing
+                            @assert lᵉ ≠ nothing
                             @info "Curve smoothing for the solution:\n$sol\nin interval [$R¹, $Rᵉ] for ⟨$(i)|∂/∂R|$(j)⟩..."
                             k = dataColumnOfSymetricMatrix(i, j, N)
                             vR = ∂_∂R_arg[l¹:lᵉ]
@@ -171,6 +173,8 @@ function diabatizeWithPartialMatrices(
                                 R¹ˢ = R₀ - ΔRˢᵐ; Rᵉˢ = R₀ + ΔRˢᵐ
                                 @info "Recalculated smoothing area: ⟨$(i)|∂/∂R|$(j)⟩ in interval [$R¹ˢ, $Rᵉˢ]"
                                 l¹ˢ = findlast(R -> R < R¹ˢ, ∂_∂R_arg); lᵉˢ = findlast(R -> R <= Rᵉˢ, ∂_∂R_arg)
+                                @assert l¹ˢ ≠ nothing
+                                @assert lᵉˢ ≠ nothing
                                 vR = ∂_∂R_arg[l¹ˢ:lᵉˢ]
 
                                 @info "For the coupling ⟨$(i)|∂/∂R|$(j)⟩ found R₀ = $R₀ and τ₀ = $τ₀, ∫⟨$(i)|∂/∂R|$(j)⟩dR = $It, [$R¹ˢ, $Rᵉˢ], ΔRˢᵐ=$ΔRˢᵐ"

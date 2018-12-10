@@ -56,7 +56,7 @@ function mergeGrids(Rᵛ, Rᴸˢ, Rˢ, Rᴿˢ)
     @assert Rᴿˢ[end] <= Rᵛ[end]
     # 1. left interval
     iR = findlast(R -> R < Rᴸˢ[1], Rᵛ)
-    if iR > 0
+    if iR ≠ nothing
         @info "Merging left interval [$(Rᵛ[1]), $(Rᵛ[iR])]"
         for i = 1:iR
             push!(Rᵐ, Rᵛ[i])
@@ -70,8 +70,8 @@ function mergeGrids(Rᵛ, Rᴸˢ, Rˢ, Rᴿˢ)
     # 3. main interval
     iRᴸ = findfirst(R -> R > Rᴸˢ[end], Rˢ)
     iRᴿ = findlast(R -> R < Rᴿˢ[1], Rˢ)
-    @assert iRᴸ > 0
-    @assert iRᴿ > 0
+    @assert iRᴸ ≠ nothing
+    @assert iRᴿ ≠ nothing
     @assert iRᴸ < iRᴿ
     @info "Merging solution interval [$(Rˢ[iRᴸ]), $(Rˢ[iRᴿ])]"
     for i = iRᴸ:iRᴿ
@@ -84,7 +84,7 @@ function mergeGrids(Rᵛ, Rᴸˢ, Rˢ, Rᴿˢ)
     end
     # 5. right interval
     iR = findfirst(R -> R > Rᴿˢ[end], Rᵛ)
-    if iR > 0
+    if iR ≠ nothing
         @info "Merging right interval [$(Rᵛ[iR]), $(Rᵛ[end])]"
         for i = iR:length(Rᵛ)
             push!(Rᵐ, Rᵛ[i])
@@ -247,8 +247,8 @@ function argumentGrid(Rᴸ::Vector{Float64}, Rᴿ::Vector{Float64}, Rᵛ::Vector
 
     Rᴸᵉˣᵗ = Rᴸ[1] - ΔRᴸ - Hᴸ
     Rᴿᵉˣᵗ = Rᴿ[end] + ΔRᴿ + Hᴿ
-    iRᴸ = findlast(R -> R <= Rᴸᵉˣᵗ, Rᵛ); iRᴸ = iRᴸ > 0 ? iRᴸ : 1
-    iRᴿ = findfirst(R -> R >= Rᴿᵉˣᵗ, Rᵛ); iRᴿ = iRᴿ > 0 ? iRᴿ : length(Rᵛ)
+    iRᴸ = findlast(R -> R <= Rᴸᵉˣᵗ, Rᵛ); iRᴸ = iRᴸ ≠ nothing ? iRᴸ : 1
+    iRᴿ = findfirst(R -> R >= Rᴿᵉˣᵗ, Rᵛ); iRᴿ = iRᴿ ≠ nothing ? iRᴿ : length(Rᵛ)
     Rᴸᵉˣᵗ = Rᵛ[iRᴸ]; Rᴿᵉˣᵗ = Rᵛ[iRᴿ]
     @info "Smoothing intervals: left - [$Rᴸᵉˣᵗ, |$(Rᴸ[1]),$(Rᴸ[end])], right - [$(Rᴿ[1]), $(Rᴿ[end])|, $Rᴿᵉˣᵗ]"
     @info "Extra area steps: left - hᴸ = $hᴸ, right - hᴿ = $hᴿ; Max steps: left - Hᴸ = $Hᴸ, right - Hᴿ = $Hᴿ"
