@@ -67,7 +67,7 @@ function show(io::IO, A::SinglePeakNonadiabaticArea)
   sigl = A.sign > 0 ? '△' : '▽'
   str_R₀ᵁ = A.coordinate_potentials > 1e-10 ? format("{:.5f}", A.coordinate_potentials) : "undefined"
   @assert(!isempty(A.R_knots), "Empty knots for |[$i, $j]⟩")
-  str_knots = isdefined(A.R_knots) ? "$(length(A.R_knots))" : "undefined"
+  str_knots = isdefined(A, :R_knots) ? "$(length(A.R_knots))" : "undefined"
   fe = FormatExpr(
         "Α{1}{2}{3}[{4}{5} {6} {7}{8}|{9}{10}]{11}{12}={13:.5f}, {14}={15:.5f}, {16}={17:.5f}, {18}={19:.6e}, {20}={21}, {22}={23:.7f}, {24}{25}{26}{27}={28}={29:.7f}, {30}{31}{32}{33}")
   print(io,
