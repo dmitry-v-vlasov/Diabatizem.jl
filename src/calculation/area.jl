@@ -21,19 +21,22 @@ mutable struct DirtyNonadiabaticArea <: NonadiabaticArea
   end
 end
 
-function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃᵗᵃ::Matrix{Float64}, Hᴬ::Array{Function, 2}, nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
+function detectSinglePeakAreas(M_∂_∂R::Matrix{Function},
+  M_∂_∂Rᵈᵃᵗᵃ::Matrix{Float64}, Hᴬ::Matrix{Function},
+  nonadiabatic_config::NonadiabaticAreasConfiguration, Rstop::Float64)
 
   Rₛₜₐᵣₜ = nonadiabatic_config.coordinate_start; ΔRₘₐₓ = nonadiabatic_config.coordinate_step; Rₛₜₒₚ = Rstop
   ΔRₚᵢₑₛₑ = nonadiabatic_config.coordinate_piece
   ϵₐ_y = abs(nonadiabatic_config.coordinate_step_error)
 
   # -----------
-  M_∂_∂R_sorted = sortrows(M_∂_∂Rᵈᵃᵗᵃ; by=row->(row[1]))
+  M_∂_∂R_sorted = sortslices(M_∂_∂Rᵈᵃᵗᵃ; dims=1)
   M_∂_∂R_vector_filtered = Vector{Vector{Float64}}(undef, 0)
-  for row in IteratorRow(M_∂_∂R_sorted)
-    R = row[1]
+
+  for nrow in 1:size(M_∂_∂R_sorted, 1)
+    R = M_∂_∂R_sorted[nrow, 1]
     if Rₛₜₐᵣₜ <= R <= Rₛₜₒₚ
-      push!(M_∂_∂R_vector_filtered, row)
+      push!(M_∂_∂R_vector_filtered, M_∂_∂R_sorted[nrow, :])
     end
   end
   L = size(M_∂_∂R_vector_filtered, 1); Nᶜ = size(M_∂_∂R_vector_filtered[1], 1)
@@ -64,8 +67,8 @@ function detectSinglePeakAreas(M_∂_∂R::Array{Function, 2}, M_∂_∂Rᵈᵃ�
       areas[i, j] = Vector{NonadiabaticArea}(undef, 0)
 
       table = Vector{Tuple{Float64, Float64}}(undef, 0)
-      for row in IteratorRow(M_∂_∂Rᵍᵒᵒᵈ)
-        R = row[1]; τᵗ = row[dataColumnOfSymetricMatrix(i, j, N) + 1]
+      for nrow in 1:size(M_∂_∂Rᵍᵒᵒᵈ, 1)
+        R = M_∂_∂Rᵍᵒᵒᵈ[nrow, 1]; τᵗ = M_∂_∂Rᵍᵒᵒᵈ[nrow, dataColumnOfSymetricMatrix(i, j, N) + 1]
         push!(table, (R, τᵗ))
       end
 

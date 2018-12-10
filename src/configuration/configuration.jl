@@ -233,7 +233,7 @@ function loadDiabatizationSettings(js)
   for area in js_selected_areas
       state1 = area["states"][1]
       state2 = area["states"][2]
-      extra_length = area["extra-length"]
+      extra_length = Tuple{Float64, Float64}(area["extra-length"])
       diab_area = SelectedDiabatizationArea(
         area["coordinate"], (state1, state2), extra_length, area["bunch-exclude"])
       push!(selected_areas, diab_area)

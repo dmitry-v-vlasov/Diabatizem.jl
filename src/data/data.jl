@@ -168,12 +168,12 @@ function buildData(table_Hₐ::DataFrame, table_∂_∂R::DataFrame, interpolati
 end
 
 function buildHₐ!(table_Hₐ::DataFrame, data::Data, interpolationType::InterpolationType)
-  @info "Doing spline interpolation for adiabatic hamiltonian"
+  @info "Doing spline interpolation for adiabatic hamiltonian";
   X = convert(Vector{Float64}, table_Hₐ[1])
   ΔR = X[2] - X[1]
   N = numberOfChannels(table_Hₐ)
-  data.Hₐ = Array{Function, 2}(N, N)
-  data.itp_Hₐ = Array{Dierckx.Spline1D, 2}(N, N)
+  data.Hₐ = Array{Function, 2}(undef, N, N)
+  data.itp_Hₐ = Array{Dierckx.Spline1D, 2}(undef, N, N)
   for i = 1:N, j = 1:N
     if i == j
       Y = convert(Vector{Float64}, table_Hₐ[i + 1])
@@ -192,8 +192,8 @@ function build_d_dR!(table_∂_∂R::DataFrame, data::Data, N::Int, interpolatio
   X = convert(Vector{Float64}, table_∂_∂R[1])
   ΔR = X[2] - X[1]
   Nc = size(X, 1) - 1
-  data.∂_∂R = Array{Function, 2}(N, N)
-  data.itp_∂_∂R = Array{Dierckx.Spline1D, 2}(N, N)
+  data.∂_∂R = Array{Function, 2}(undef, N, N)
+  data.itp_∂_∂R = Array{Dierckx.Spline1D, 2}(undef, N, N)
   for i = 1:N, j = 1:N
     if i ≠ j
       @info "Interpolation for <$i|d/dR|$j>"
