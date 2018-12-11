@@ -101,10 +101,10 @@ function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Matrix{Fl
       end
     end
 
-    fmtrfunc = generate_formatter("%11.9e")
+    fe = FormatExpr("{1:11.9e}")
     buf = IOBuffer()
     for i = 1:N, j = 1:N
-      print(buf, fmtrfunc(Mˡ[i, j]))
+      printfmt(buf, fe, Mˡ[i, j])
       if i <= N && j < N
         print(buf, "  ")
       elseif i <= N && j == N

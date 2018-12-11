@@ -6,3 +6,6 @@ deps/deps.jl
 tmp/
 
 *.swp
+
+output*.dsv
+output*.csv
