@@ -2,6 +2,7 @@ using DataFrames
 using Calculus
 using Formatting
 using Nullables
+using CSVFiles
 
 import Dierckx
 
@@ -66,14 +67,14 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   saveMatrixElementTable(Hᵒᶠᶠᵈⁱᵃᵍ, out.file_hamiltonian_diabatic)
   @info "Saving the transformation matrix table to '$(out.file_coupling_∂_∂R_diabatic)'"
   saveMatrixElementTable(∂_∂R, out.file_coupling_∂_∂R_diabatic)
-  saveMatrixElementTable(∂_∂Rᵐ, "$(out.file_coupling_∂_∂R_diabatic)-model.dsv")
+  saveMatrixElementTable(∂_∂Rᵐ, "$(out.file_coupling_∂_∂R_diabatic)-model.csv")
   @info "Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic)'"
   saveMatrixElementTable(∂²_∂R², out.file_coupling_∂²_∂R²_diabatic)
   @info "Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic_diag)'"
   saveMatrixElementTable(∂²_∂R²ᵈⁱᵃᵍ, out.file_coupling_∂²_∂R²_diabatic_diag)
   @info "Saving the partial transformation matrices..."
   for sol ∈ Sl
-      sol_file_name = "$(out.file_transformation_matrix)-$(join(sol.states, "_")).dsv"
+      sol_file_name = "$(out.file_transformation_matrix)-$(join(sol.states, "_")).csv"
       @info "Saving the solution]\n$sol to\nthe file $sol_file_name"
       points = sol.points; sol_data = matl2matdata(sol.S)
       sol_table = makeMatrixElementTable(points, sol_data, :general, "C", N)
@@ -123,7 +124,9 @@ function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Matrix{Fl
 end
 
 function saveMatrixElementTable(data::DataFrame, file_name::AbstractString)
-    writetable(file_name, data; separator=' ', quotemark=' ', header=true, nastring="EMPTY")
+    #CSV.write(file_name, data; separator=' ', quotechar='"', header=true)
+    @info "Saving matrix elements to file '$(file_name)'"
+    data |> CSVFiles.save(file_name; delim=' ', quotechar='"', header=true)
 end
 
 function makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, A::Matrix{Float64}, dataType::Symbol, operator::AbstractString, N::Int)

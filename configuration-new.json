@@ -3,17 +3,17 @@
     "hamiltonian-adiabatic": "/home/dmitry/Dropbox/CaH/original/CaH-pots-2017-01-09.csv",
     "coupling_∂_∂R_adiabatic": "/home/dmitry/Dropbox/CaH/original/CaH-ddr-2016-07-01.csv",
     "coupling_∂_∂R_adiabatic_model": "/home/dmitry/Dropbox/CaH/original/CaH-ddr-2016-07-01.csv",
-    "transformation-matrix-initial": "s-matrix.dsv",
-    "transformation-matrix": "transformation-matrix.dsv"
+    "transformation-matrix-initial": "s-matrix.csv"
   },
+  "transformation-matrix": "transformation-matrix.csv",
   "output-data": {
-    "potentials-diabatic": "output1-potentials-diabatic.dsv",
-    "hamiltonian-diabatic": "output1-hamiltonian-diabatic.dsv",
-    "coupling-∂_∂R-diabatic": "output1-ddr-diabatic.dsv",
-    "coupling-∂²_∂R²-diabatic": "output1-d2dr2-diabatic.dsv",
-    "coupling-∂²_∂R²-diabatic-diagonal": "output1-d2dr2-diabatic-diagonal.dsv",
-    "transformation-matrix": "output1-transformation-matrix.dsv",
-    "transformation-matrix-general": "output1-transformation-matrix-general.dsv"
+    "potentials-diabatic": "output1-potentials-diabatic.csv",
+    "hamiltonian-diabatic": "output1-hamiltonian-diabatic.csv",
+    "coupling-∂_∂R-diabatic": "output1-ddr-diabatic.csv",
+    "coupling-∂²_∂R²-diabatic": "output1-d2dr2-diabatic.csv",
+    "coupling-∂²_∂R²-diabatic-diagonal": "output1-d2dr2-diabatic-diagonal.csv",
+    "transformation-matrix": "output1-transformation-matrix.csv",
+    "transformation-matrix-general": "output1-transformation-matrix-general.csv"
   },
   "settings": {
     "strategy": "Landau-Zener",

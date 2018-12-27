@@ -7,5 +7,5 @@ tmp/
 
 *.swp
 
-output*.dsv
-output*.csv
+out*.dsv
+out*.csv
