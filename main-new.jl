@@ -20,6 +20,11 @@ Rᵈᵃᵗᵃ = ∂_∂Rᵈᵃᵗᵃ[:, 1];
 Sl = solverTransformationMatrixForAreas(Aˡᶻᶠˡ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, C.settings.diabatization);
 
 expandLocalSolutions(Sl, Rᵈᵃᵗᵃ, C.settings.diabatization);
+# Show where we can have π/2 from the original couplings
+# Select where we can do it and print the candidates
+# Try make new set of Local solutions with the real ddRs
+# call the function expandLocalSolutions(Sl, Rᵈᵃᵗᵃ, C.settings.diabatization); again
+
 Rᶜ, S, Hᴰ, ∂_∂Rᴰ, ∂_∂Rᵐ = diabatize(Hᴬ, ∂_∂Rᴬ, ∂_∂Rᵐᵒᵈᵉˡ, Rᵈᵃᵗᵃ, Sl, C.settings.diabatization, Aˡᶻᶠ);
 
 @info "Transformed in the interval [$(Rᶜ[1]), $(Rᶜ[end])]"
