@@ -1,0 +1,74 @@
+{
+  "input-data": {
+    "hamiltonian-adiabatic": "/home/universal/projects/PHD/software/data/Ca-H/original/CaH-pots-2017-01-09.dat",
+    "coupling_∂_∂R_adiabatic": "/home/universal/projects/PHD/software/data/Ca-H/original/CaH-ddr-2016-07-01.dat",
+    "coupling_∂_∂R_adiabatic_model": "/home/universal/projects/PHD/software/data/Ca-H/original/CaH-ddr-2016-07-01.dat",
+    "transformation-matrix-initial": "s-matrix.dsv",
+    "transformation-matrix": "transformation-matrix.dsv"
+  },
+  "output-data": {
+    "potentials-diabatic": "output1-potentials-diabatic.dsv",
+    "hamiltonian-diabatic": "output1-hamiltonian-diabatic.dsv",
+    "coupling-∂_∂R-diabatic": "output1-ddr-diabatic.dsv",
+    "coupling-∂²_∂R²-diabatic": "output1-d2dr2-diabatic.dsv",
+    "coupling-∂²_∂R²-diabatic-diagonal": "output1-d2dr2-diabatic-diagonal.dsv",
+    "transformation-matrix": "output1-transformation-matrix.dsv",
+    "transformation-matrix-general": "output1-transformation-matrix-general.dsv"
+  },
+  "settings": {
+    "strategy": "Landau-Zener",
+    "coordinate-start": 0.01,
+    "coordinate-step": 0.00001,
+    "coordinate-piece": 0.00005,
+    "coordinate-step-error": 1e-8,
+    "asymptotics": {
+      "coordinate-start": 0.1,
+      "coordinate-step": 0.0005,
+      "coordinate-step-error": 1e-9,
+      "coordinate-safety-step": 1.0,
+      "potential-asymptotic-value-error": 0.0005,
+      "∂_∂R-asymptotic-value-error": 0.0005,
+      "∂_∂R-zero-value-error": 0.0005
+    },
+    "nonadiabatic-areas": {
+      "coordinate-start": 0.1,
+      "coordinate-step": 0.00001,
+      "coordinate-piece": 0.00005,
+      "coordinate-step-error": 1e-9,
+      "areas": {
+        "single-peak": {
+          "error-∂_∂R-peak": 0.01,
+          "vanishing-∂_∂R-value": 5.0,
+          "error-vanishing-∂_∂R-value": 1.0,
+          "error-potential-distance-minimal": 0.0005,
+          "error-potential-distance-coordinate": 0.001,
+          "error-potential-∂_∂R-coordinate": 0.5
+        }
+      }
+    },
+    "diabatization": {
+      "selected-areas": [
+        {
+          "coordinate": 29.63403831,
+          "states": [8, 9],
+          "extra-length": [0.5, 0.5],
+          "bunch-exclude": false
+        }
+      ],
+      "keep-initial-conditions": false,
+      "coordinate-start": 100.0,
+      "coordinate-step": {"min": 1e-7, "max": 1e-2},
+      "coordinate-stop": 0.01,
+      "area-closeness": 1.5,
+      "use-last-transformation-matrix-from": 0.01
+    },
+    "utility": {
+      "channel-ionic-number": -1,
+      "channel-lowest-number": 1
+    },
+    "interpolation": {
+      "hamiltonian": "spline-cubic",
+      "coupling-∂_∂R": "spline-quadratic"
+    }
+  }
+}

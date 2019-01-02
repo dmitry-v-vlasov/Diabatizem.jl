@@ -12,7 +12,7 @@ function potentialAsymptoticValues(potentials::Array{Function, 2},
                                     safety_coordinate_step::Float64,
                                     asymptotic_value_error::Float64)
   N = size(potentials, 1)
-  potentialAsymptotics = Array{PotentialAsymptotic}(N)
+  potentialAsymptotics = Vector{PotentialAsymptotic}(undef, N)
 
   R₀ = coordinate_start
   ΔR = coordinate_step
@@ -41,7 +41,7 @@ function potentialAsymptoticValues(potentials::Array{Function, 2},
       end
 
       if R == Rₐ && zero_counter < 10
-        error("The potential with the number $l (possible state name is '$(⚛⚛_STATES[l])') has unclear asymptotic behaviour.")
+        @error "The potential with the number $l (possible state name is '$(⚛⚛_STATES[l])') has unclear asymptotic behaviour."
       end
     end
   end
@@ -58,5 +58,5 @@ function toStringPotentialAsymptotics(asymptotics::Array{PotentialAsymptotic})
     print(buff, "{$(ψ)→$(⚛⚛_STATES[ψ]): U(∞)=$(U_∞); Rₐ=$(Rₐ)}")
     print(buff, "\n")
   end
-  return takebuf_string(buff)
+  return String(take!(buffer))
 end

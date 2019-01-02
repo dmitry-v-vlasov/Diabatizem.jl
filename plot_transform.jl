@@ -2,7 +2,7 @@ using Plots
 using Calculus
 import Dierckx
 
-x_ticks=Vector{Int}(); append!(x_ticks, 1:9); append!(x_ticks, 10:5:100)
+x_ticks=Vector{Int}(undef, 0); append!(x_ticks, 1:9); append!(x_ticks, 10:5:100)
 x_tick_labels=(x_ticks, collect("$tick" for tick in x_ticks))
 pl = plot(title="Diabatization Transforming Matrix (NaH Quasimolecule)",
   xscale = :log10,
@@ -16,7 +16,7 @@ for l = 1:Nˡ
   i, j = mpos(l, N)
   if i in 8:9 && j in 8:9
     println("plotting $i, $j")
-    plot!(pl, Rᵖᵒⁱⁿᵗˢ, R -> Calculus.derivative(Sf[l], R), linestyle=(i == j) ? :dot : :solid, markershape=(i == j) ? :circle : :diamond,  label="S$(int2indexsub(i))$(int2indexsub(j))");
+    plot!(pl, Rᵖᵒⁱⁿᵗˢ, R -> Sf[l](R), linestyle=(i == j) ? :dot : :solid, markershape=(i == j) ? :circle : :diamond,  label="S$(int2indexsub(i))$(int2indexsub(j))");
   end
 end
 pl

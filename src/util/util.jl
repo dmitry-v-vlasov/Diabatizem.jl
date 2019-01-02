@@ -1,39 +1,102 @@
 using Calculus
-using Logging
 using ProgressMeter
+using DataFrames
+using CSVFiles
+
+using PolynomialRoots
 
 import Dierckx
 
 #const tanˡⁱᵐ = 57.28996163075943 # tan(89°)
 const tanˡⁱᵐ = 5.671281819617709 # tan(80°)
+const degree = π / 180.0
+const golden = Base.MathConstants.golden
+const inv_ϕ₀ = (1 - 1 / golden)
+const ϕ₀ = 1/golden
+
+function clearGrid(R::Vector{Float64}, ϵᴿ)
+    Rᵛ = Vector{Float64}(undef, 0)
+    Rˡ = R[1]
+    push!(Rᵛ, Rˡ)
+    for Rⁱ ∈ R[2:end]
+        if abs(Rⁱ - Rˡ) > ϵᴿ
+            Rˡ = Rⁱ
+            push!(Rᵛ, Rⁱ)
+        else
+            # skip
+        end
+    end
+    return Rᵛ
+end
+
+function sigmoid_of_name(f1::Function, f2::Function, x₀, α, name::AbstractString)
+  return x -> begin
+    sf = (1 - sigmoid(x, x₀, α))*f1(x) + sigmoid(x, x₀, α)*f2(x)
+    if sf === NaN || sf === NaN64 || sf === NaN32 || sf === NaN16
+      @error "SIGMOID NaN: x=$x, x₀=$x₀, α=$α, f1(x)=$(f1(x)), f2(x)=$(f2(x)), σ(x)=$(sigmoid(x, x₀, α)), name=$name"
+    end
+    return sf
+  end
+end
+const sigmoid = (x, x₀, α) -> 1/(1+exp(-(x - x₀)/α))
+
+function mat2string(M::Matrix{Float64})
+    io = IOBuffer()
+    return String(take!(io))
+    Base.print_array(io, M)
+end
+
+function mat2string(M::Array{Function, 2})
+    io = IOBuffer()
+    Base.print_array(io, M)
+    return String(take!(io))
+end
+
+function load_data(file::AbstractString; header=true)
+  return DataFrame(load(file;
+    spacedelim=true, header_exists=header))
+end
+
+function save_data(data::DataFrame, file::AbstractString; header=true)
+  writetable(file, data; separator=' ', quotemark=' ', header=header, nastring="EMPTY")
+end
+
+function load_data(file::AbstractString; header=true)
+  return DataFrame(load(file;
+    spacedelim=true, header_exists=header))
+end
+
+function save_data(data::DataFrame, file::AbstractString; header=true)
+  writetable(file, data; separator=' ', quotemark=' ', header=header, nastring="EMPTY")
+end
 
 # ---------------------------------
 # Miscellaneous Types
 # ---------------------------------
-immutable IteratorRow{T<:AbstractMatrix}
-  A::T
-end
-Base.start(::IteratorRow)  = 1
-Base.next(it::IteratorRow, i) = (it.A[i, :], i+1)
-Base.done(it::IteratorRow, i) = i > size(it.A, 1)
+# immutable IteratorRow{T<:AbstractMatrix}
+#   A::T
+# end
+# Base.start(::IteratorRow)  = 1
+# Base.next(it::IteratorRow, i) = (it.A[i, :], i+1)
+# Base.done(it::IteratorRow, i) = i > size(it.A, 1)
 
 # ---------------------------------
 # Miscellaneous utility functions
 # ---------------------------------
-function filterMatrixRows(M::Array{Float64, 2}, predicate::Function)
-  Vᵐ = Vector{Vector{Float64}}()
-  for row in IteratorRow(M)
-    if predicate(row)
-      push!(Vᵐ, row)
-    end
-  end
-  L = size(Vᵐ, 1); N = size(Vᵐ[1], 1)
-  Mᵐ = Array{Float64, 2}(L, N)
-  for l = 1:L
-    Mᵐ[l, :] = Vᵐ[l]
-  end
-  return Mᵐ
-end
+# function filterMatrixRows(M::Matrix{Float64}, predicate::Function)
+#   Vᵐ = Vector{Vector{Float64}}(undef, 0)
+#   for row in IteratorRow(M)
+#     if predicate(row)
+#       push!(Vᵐ, row)
+#     end
+#   end
+#   L = size(Vᵐ, 1); N = size(Vᵐ[1], 1)
+#   Mᵐ = Matrix{Float64}(undef, L, N)
+#   for l = 1:L
+#     Mᵐ[l, :] = Vᵐ[l]
+#   end
+#   return Mᵐ
+# end
 
 function highDerivative(f::Function, x::Float64, Δx::Float64)
   return abs((f(x + Δx) - f(x - Δx)) / (2 * Δx)) > tanˡⁱᵐ
@@ -96,6 +159,15 @@ function dataSizeOfSymetricMatrix(N::Int)
   return convert(Int, N*(N - 1) / 2)
 end
 
+function sizeOfSymmetricUpperMatrix(Nˡ::Int)
+    roots = real(PolynomialRoots.roots([-Nˡ, -0.5, 0.5]))
+    @info "Roots for Nˡ=$Nˡ: $roots"
+    @assert all(isreal, roots)
+    N = maximum(filter(x -> x > 0, round.(Int, real(roots))))
+    L = dataSizeOfSymetricMatrix(N)
+    @assert(L == Nˡ, "$L≠$Nˡ")
+    return N
+end
 
 """
 Convert vector element number to a pair of N×N matrix indices.
@@ -112,17 +184,17 @@ function mvec(i::Int, j::Int, N::Int)
   return N*(i - 1) + j
 end
 
-function vec2mat!(v::Vector{Float64}, m::Array{Float64, 2})
+function vec2mat!(v::Vector{Float64}, m::Matrix{Float64})
   N = size(m, 1)
   @assert N == size(m, 2)
-  @assert N*N == size(v, 1)
+  @assert(N*N == size(v, 1), "With N = $N: $(N*N) ≠ $(size(v, 1)).")
   for l = 1:N*N
     i, j = mpos(l, N)
     m[i, j] = v[l]
   end
 end
 
-function mat2vec!(m::Array{Float64, 2}, v::Vector{Float64})
+function mat2vec!(m::Matrix{Float64}, v::Vector{Float64})
   N = size(m, 1)
   @assert N == size(m, 2)
   @assert N*N == size(v, 1)
@@ -132,12 +204,12 @@ function mat2vec!(m::Array{Float64, 2}, v::Vector{Float64})
   end
 end
 
-function matl2matldiag(Mˡ::Vector{Array{Float64, 2}})
+function matl2matldiag(Mˡ::Vector{Matrix{Float64}})
   N = size(Mˡ[1], 1)
   L = size(Mˡ, 1)
-  Mˡᵈⁱᵃᵍ = Array{Float64, 2}(L, N)
+  Mˡᵈⁱᵃᵍ = Matrix{Float64}(undef, L, N)
   for i = 1:L
-    H_vector = Vector{Float64}(N)
+    H_vector = Vector{Float64}(undef, N)
     for k = 1:N
       H_vector[k] = Mˡ[i][k, k]
     end
@@ -146,11 +218,11 @@ function matl2matldiag(Mˡ::Vector{Array{Float64, 2}})
   return Mˡᵈⁱᵃᵍ
 end
 
-function matl2matupper(M::Array{Float64, 2})
+function matl2matupper(M::Matrix{Float64})
   @assert size(M, 1) == size(M, 2) "$(size(M, 1))≠$(size(M, 2))"
   N = size(M, 1)
   L = dataSizeOfSymetricMatrix(N)
-  ML = Vector{Float64}(L)
+  ML = Vector{Float64}(undef, L)
   for i=1:N, j=i+1:N
     l = dataColumnOfSymetricMatrix(i, j, N)
     ML[l] = M[i, j]
@@ -158,12 +230,12 @@ function matl2matupper(M::Array{Float64, 2})
   return ML
 end
 
-function matl2matlupperx(Mˡ::Vector{Array{Float64, 2}})
+function matl2matlupperx(Mˡ::Vector{Matrix{Float64}})
   N = size(Mˡ[1], 1)
   L = size(Mˡ, 1); Nᴸ = dataSizeOfSymetricMatrix(N)
-  Mˡᵈⁱᵃᵍ = Array{Float64, 2}(L, Nᴸ)
+  Mˡᵈⁱᵃᵍ = Matrix{Float64}(undef, L, Nᴸ)
   for l = 1:L
-    H_vector = Vector{Float64}(Nᴸ)
+    H_vector = Vector{Float64}(undef, Nᴸ)
     for i = 1:N, j = 1:N
       if i < j && i ≠ j
         k = dataColumnOfSymetricMatrix(i, j, N)
@@ -175,12 +247,36 @@ function matl2matlupperx(Mˡ::Vector{Array{Float64, 2}})
   return Mˡᵈⁱᵃᵍ
 end
 
-function matl2matdata(Mˡ::Vector{Array{Float64, 2}})
+function matlupperx_ddr2matl(M::Matrix{Float64})
+    L = size(M, 1)
+    L_N = size(M, 2)
+    N = sizeOfSymmetricUpperMatrix(L_N)
+    L_N_check = dataSizeOfSymetricMatrix(N)
+    @assert L_N_check == L_N
+    Mˡ = Vector{Matrix{Float64}}(undef, L)
+    @info "N=$N, L=$L, L_N=$L_N"
+    for l = 1:L
+        M_l = Matrix{Float64}(undef, N, N)
+        for i = 1:N, j = 1:N
+            if i == j
+                M_l[i, i] = 0.0
+            elseif i < j
+                k = dataColumnOfSymetricMatrix(i, j, N)
+                M_l[i, j] = M[l, k]
+                M_l[j, i] = -M[l, k]
+            end
+        end
+        Mˡ[l] = M_l
+    end
+    return Mˡ
+end
+
+function matl2matdata(Mˡ::Vector{Matrix{Float64}})
   N = size(Mˡ[1], 1)
   L = size(Mˡ, 1); Nᴸ = N*N
-  Mˡᵈⁱᵃᵍ = Array{Float64, 2}(L, Nᴸ)
+  Mˡᵈⁱᵃᵍ = Matrix{Float64}(undef, L, Nᴸ)
   for l = 1:L
-    H_vector = Vector{Float64}(Nᴸ)
+    H_vector = Vector{Float64}(undef, Nᴸ)
     for i = 1:N, j = 1:N
       k = mvec(i, j, N)
       H_vector[k] = Mˡ[l][i, j]
@@ -190,36 +286,57 @@ function matl2matdata(Mˡ::Vector{Array{Float64, 2}})
   return Mˡᵈⁱᵃᵍ
 end
 
+function matdata2matl(data::DataFrame)
+  @assert !isempty(data)
+  @assert size(data, 2) > 1
+  X = collect(data[:,1])
+  Nᵖᵒⁱⁿᵗˢ = size(data, 1)
+  L = size(data, 2) - 1
+  N = round.(Int, √L)
+  @assert N*N == L
+  Y = Vector{Matrix{Float64}}(undef, Nᵖᵒⁱⁿᵗˢ)
+  for k = 1:Nᵖᵒⁱⁿᵗˢ
+    Yₖ = Matrix{Float64}(undef, N, N)
+    for l = 1:N*N
+      i, j = mpos(l, N)
+      Yₖ[i, j] = data[k, l + 1]
+    end
+    Y[k] = Yₖ
+  end
+  return X, Y
+end
+
 function matf2mat(x::Float64, Mᶠ::Array{Function, 2})
   N₁ = size(Mᶠ, 1); N₂ = size(Mᶠ, 2)
-  M = Array{Float64, 2}(N₁, N₂)
+  M = Matrix{Float64}(undef, N₁, N₂)
   for i = 1:N₁, j = 1:N₂
     M[i, j] = Mᶠ[i, j](x)
   end
   return M
 end
 
-function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Array{Float64, 2}})
+function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Matrix{Float64}}; behaviour::AbstractString="extrapolate")
   L = length(X)
   N = size(Mˡ[1], 1)
   Mᵈᵃᵗᵃ = matl2mdata(Mˡ)
-  Mᶠ = Array{Function, 2}(N, N)
-  M_spline = Array{Dierckx.Spline1D, 2}(N, N)
+  Mᶠ = Matrix{Function}(undef, N, N)
+  M_spline = Matrix{Dierckx.Spline1D}(undef, N, N)
   for k = 1:N*N
     Y = Mᵈᵃᵗᵃ[:, k]
     i, j = mpos(k, N)
-    spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=1, bc="extrapolate", s=0.0)
+    @assert(length(X) == length(Y), "length(X) == length(Y), $(length(X)) ≠ $(length(Y))")
+    spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=1, bc=behaviour, s=0.0)
     Mᶠ[i, j] = R -> Dierckx.evaluate(spl, R)
     M_spline[i, j] = spl
   end
   return Mᶠ, M_spline
 end
 
-function matd2vecfsl(X::Vector{Float64}, Mᵈᵃᵗᵃ::Array{Float64, 2})
+function matd2vecfsl(X::Vector{Float64}, Mᵈᵃᵗᵃ::Matrix{Float64})
   L = length(X)
   Nc = size(Mᵈᵃᵗᵃ, 2)
-  Mᶠ = Vector{Function}(Nc)
-  M_spline = Vector{Dierckx.Spline1D}(Nc)
+  Mᶠ = Vector{Function}(undef, Nc)
+  M_spline = Vector{Dierckx.Spline1D}(undef, Nc)
   for k = 1:Nc
     Y = Mᵈᵃᵗᵃ[:, k]
     spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=1, bc="extrapolate", s=0.0)
@@ -231,26 +348,26 @@ end
 
 function matDerivative(X::Float64, splines::Array{Dierckx.Spline1D, 2})
   N = size(splines, 1)
-  M = Array{Float64, 2}(N, N)
+  M = Matrix{Float64}(undef, N, N)
   for i=1:N, j=1:N
     M[i, j] = Dierckx.derivative(splines[i, j], X; nu=1)
   end
   return M
 end
 
-function matl2vec(Mˡ::Vector{Array{Float64, 2}}, i, j)
+function matl2vec(Mˡ::Vector{Matrix{Float64}}, i, j)
   N = size(Mˡ, 1)
-  M = Vector{Float64}(N)
+  M = Vector{Float64}(undef, N)
   for l = 1:N
     M[l] = Mˡ[l][i, j]
   end
   return M
 end
 
-function matl2mdata(Mˡ::Vector{Array{Float64, 2}})
+function matl2mdata(Mˡ::Vector{Matrix{Float64}})
   L = size(Mˡ, 1)
   N = size(Mˡ[1], 1)
-  Mᵈᵃᵗᵃ = Array{Float64, 2}(L, N*N)
+  Mᵈᵃᵗᵃ = Matrix{Float64}(undef, L, N*N)
   for k = 1:L
     for i = 1:N, j = 1:N
       l = mvec(i, j, N)
@@ -304,7 +421,7 @@ function splitn(x₀::Float64, x::Float64, f::Function, m₀::Float64, M₀::Flo
   δf = abs(fₓ - fₓ₀)
   if δf < m₀ || fʳᵉᶠ < m₀
     return abs(x - x₀) > Δxₘₐₓ ?
-      ceil(Int, abs(x - x₀)/abs(Δxₘₐₓ)):
+      ceil(Int, abs(x - x₀)/abs(Δxₘₐₓ)) :
       (abs(x - x₀) > Δxₘᵢₙ ?
         ceil(Int, abs(x - x₀)/abs(Δxₘᵢₙ)) :
         1
@@ -345,7 +462,7 @@ function int2indexsub(i::Int)
   for d in ds
     print(buffer, INT_SUBSCRIPT[d])
   end
-  return takebuf_string(buffer)
+  return String(take!(buffer))
 end
 
 function int2molstate(i::Int)

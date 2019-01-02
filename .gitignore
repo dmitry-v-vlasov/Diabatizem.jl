@@ -5,3 +5,7 @@ deps/deps.jl
 
 tmp/
 
+*.swp
+
+out*.dsv
+out*.csv

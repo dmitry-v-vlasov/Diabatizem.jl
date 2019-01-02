@@ -1,10 +1,12 @@
 using DataFrames
 using Calculus
 using Formatting
+using Nullables
+using CSVFiles
 
 import Dierckx
 
-type Data
+mutable struct Data
   Hₐ::Array{Function, 2}
   ∂_∂R::Array{Function, 2}
   itp_Hₐ::Array{Dierckx.Spline1D, 2}
@@ -13,26 +15,28 @@ type Data
 end
 
 function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
-    S::Vector{Array{Float64, 2}},
-    Sᵈᵃᵗᵃ::Array{Float64, 2},
-    Uᴰᵈᵃᵗᵃ::Array{Float64, 2},
-    Hᴰᵈᵃᵗᵃ::Array{Float64, 2},
-    ∂_∂Rᴰᵈᵃᵗᵃ::Array{Float64, 2},
-    ∂²_∂R²ᴰᵈᵃᵗᵃ::Array{Float64, 2},
-    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Array{Float64, 2},
+    S::Vector{Matrix{Float64}},
+    Sᵈᵃᵗᵃ::Matrix{Float64},
+    Uᴰᵈᵃᵗᵃ::Matrix{Float64},
+    Hᴰᵈᵃᵗᵃ::Matrix{Float64},
+    ∂_∂Rᴰᵈᵃᵗᵃ::Matrix{Float64},
+    ∂_∂Rᵐᵈᵃᵗᵃ::Matrix{Float64},
+    ∂_∂R_arg::Vector{Float64},
+    ∂²_∂R²ᴰᵈᵃᵗᵃ::Matrix{Float64},
+    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Matrix{Float64},
+    Sl::Vector{LocalSolution},
     out::OutputPaths)
-  Logging.configure(level=INFO)
 
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Uᴰᵈᵃᵗᵃ, 1)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Hᴰᵈᵃᵗᵃ, 1)
-  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂_∂Rᴰᵈᵃᵗᵃ, 1)
-  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 1)
-  @assert length(Rᵖᵒⁱⁿᵗˢ) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 1)
+  @assert length(∂_∂R_arg) == size(∂_∂Rᴰᵈᵃᵗᵃ, 1)
+  @assert length(∂_∂R_arg) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 1)
+  @assert length(∂_∂R_arg) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 1)
 
   @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(Uᴰᵈᵃᵗᵃ, 2)*(size(Uᴰᵈᵃᵗᵃ, 2) - 1)/2
-  @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂_∂Rᴰᵈᵃᵗᵃ, 2)
-  @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 2)
-  @assert size(Uᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 2)
+  #@assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂_∂Rᴰᵈᵃᵗᵃ, 2)
+  #@assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 2)
+  #@assert size(Uᴰᵈᵃᵗᵃ, 2) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 2)
 
   L = length(Rᵖᵒⁱⁿᵗˢ)
   N = size(Uᴰᵈᵃᵗᵃ, 2)
@@ -44,33 +48,44 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   # -----------
   Hᵒᶠᶠᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, Hᴰᵈᵃᵗᵃ, :symmetric, "H", N)
   # -----------
-  ∂_∂R = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂_∂Rᴰᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
+  ∂_∂R = makeMatrixElementTable(∂_∂R_arg, ∂_∂Rᴰᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
+  ∂_∂Rᵐ = makeMatrixElementTable(∂_∂R_arg, ∂_∂Rᵐᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
   # -----------
-  ∂²_∂R² = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂²_∂R²ᴰᵈᵃᵗᵃ, :symmetric, "d2/dR2", N)
+  ∂²_∂R² = makeMatrixElementTable(∂_∂R_arg, ∂²_∂R²ᴰᵈᵃᵗᵃ, :symmetric, "d2/dR2", N)
   # -----------
-  ∂²_∂R²ᵈⁱᵃᵍ = makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, :diagonal, "d2/dR2", N)
+  ∂²_∂R²ᵈⁱᵃᵍ = makeMatrixElementTable(∂_∂R_arg, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, :diagonal, "d2/dR2", N)
   # -----------
 
   # -----------
-  info("Saving the transformation matrix to '$(out.file_transformation_matrix_general)'")
+  @info "Saving the transformation matrix to '$(out.file_transformation_matrix_general)'"
   saveMatrixList(Rᵖᵒⁱⁿᵗˢ, S, out.file_transformation_matrix_general)
-  info("Saving the transformation matrix table to '$(out.file_transformation_matrix)'")
+  @info "Saving the transformation matrix table to '$(out.file_transformation_matrix)'"
   saveMatrixElementTable(Sᵗᵃᵇˡᵉ, out.file_transformation_matrix)
-  info("Saving the transformation matrix table to '$(out.file_potentials_diabatic)'")
+  @info "Saving the transformation matrix table to '$(out.file_potentials_diabatic)'"
   saveMatrixElementTable(Hᵈⁱᵃᵍ, out.file_potentials_diabatic)
-  info("Saving the transformation matrix table to '$(out.file_hamiltonian_diabatic)'")
+  @info "Saving the transformation matrix table to '$(out.file_hamiltonian_diabatic)'"
   saveMatrixElementTable(Hᵒᶠᶠᵈⁱᵃᵍ, out.file_hamiltonian_diabatic)
-  info("Saving the transformation matrix table to '$(out.file_coupling_∂_∂R_diabatic)'")
+  @info "Saving the transformation matrix table to '$(out.file_coupling_∂_∂R_diabatic)'"
   saveMatrixElementTable(∂_∂R, out.file_coupling_∂_∂R_diabatic)
-  info("Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic)'")
+  saveMatrixElementTable(∂_∂Rᵐ, "$(out.file_coupling_∂_∂R_diabatic)-model.csv")
+  @info "Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic)'"
   saveMatrixElementTable(∂²_∂R², out.file_coupling_∂²_∂R²_diabatic)
-  info("Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic_diag)'")
+  @info "Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic_diag)'"
   saveMatrixElementTable(∂²_∂R²ᵈⁱᵃᵍ, out.file_coupling_∂²_∂R²_diabatic_diag)
-  info("Done")
+  @info "Saving the partial transformation matrices..."
+  for sol ∈ Sl
+      sol_file_name = "$(out.file_transformation_matrix)-$(join(sol.states, "_")).csv"
+      @info "Saving the solution]\n$sol to\nthe file $sol_file_name"
+      points = sol.points; sol_data = matl2matdata(sol.S)
+      sol_table = makeMatrixElementTable(points, sol_data, :general, "C", N)
+      saveMatrixElementTable(sol_table, sol_file_name)
+      @info "Saving to $sol_file_name... done."
+  end
+  @info "Done"
   # -----------
 end
 
-function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Array{Float64, 2}}, file_name::AbstractString)
+function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Matrix{Float64}}, file_name::AbstractString)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == length(M) "$(length(Rᵖᵒⁱⁿᵗˢ))≠$(length(M))"
   fos = open(file_name, "a")
   L = length(Rᵖᵒⁱⁿᵗˢ)
@@ -81,16 +96,16 @@ function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Array{Flo
       if abs(Mˡ[i, j]) < 1e-15
         Mˡ[i, j] = 0.0
       elseif abs(1-abs(Mˡ[i, j])) < 1e-5
-        Mˡ[i, j] = 1.0
+        Mˡ[i, j] = sign(Mˡ[i, j]) * 1.0
       else
         Mˡ[i, j] = Mˡ[i, j]
       end
     end
 
-    fmtrfunc = generate_formatter("%11.9e")
+    fe = FormatExpr("{1:11.9e}")
     buf = IOBuffer()
     for i = 1:N, j = 1:N
-      print(buf, fmtrfunc(Mˡ[i, j]))
+      printfmt(buf, fe, Mˡ[i, j])
       if i <= N && j < N
         print(buf, "  ")
       elseif i <= N && j == N
@@ -101,7 +116,7 @@ function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Array{Flo
     write(fos, "=======================================================\n")
     write(fos, "R = $Rˡ\n")
     write(fos, "-----------\n")
-    write(fos, takebuf_string(buf))
+    write(fos, String(take!(buf)))
     write(fos, "\n")
   end
   flush(fos)
@@ -109,10 +124,12 @@ function saveMatrixList(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, M::Vector{Array{Flo
 end
 
 function saveMatrixElementTable(data::DataFrame, file_name::AbstractString)
-    writetable(file_name, data; separator=' ', quotemark=' ', header=true, nastring="EMPTY")
+    #CSV.write(file_name, data; separator=' ', quotechar='"', header=true)
+    @info "Saving matrix elements to file '$(file_name)'"
+    data |> CSVFiles.save(file_name; delim=' ', quotechar='"', header=true)
 end
 
-function makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, A::Array{Float64, 2}, dataType::Symbol, operator::AbstractString, N::Int)
+function makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, A::Matrix{Float64}, dataType::Symbol, operator::AbstractString, N::Int)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(A, 1)
   data = DataFrame()
   data[:R] = Rᵖᵒⁱⁿᵗˢ
@@ -141,7 +158,7 @@ function makeMatrixElementTable(Rᵖᵒⁱⁿᵗˢ::Vector{Float64}, A::Array{Fl
       data[Symbol("<$bra|$operator|$ket>")] = A[:, l]
     end
   else
-    error("Unsupported data type.")
+    @error "Unsupported data type."
   end
   return data
 end
@@ -154,17 +171,19 @@ function buildData(table_Hₐ::DataFrame, table_∂_∂R::DataFrame, interpolati
 end
 
 function buildHₐ!(table_Hₐ::DataFrame, data::Data, interpolationType::InterpolationType)
+  @info "Doing spline interpolation for adiabatic hamiltonian";
   X = convert(Vector{Float64}, table_Hₐ[1])
   ΔR = X[2] - X[1]
   N = numberOfChannels(table_Hₐ)
-  data.Hₐ = Array{Function, 2}(N, N)
-  data.itp_Hₐ = Array{Dierckx.Spline1D, 2}(N, N)
+  data.Hₐ = Array{Function, 2}(undef, N, N)
+  data.itp_Hₐ = Array{Dierckx.Spline1D, 2}(undef, N, N)
   for i = 1:N, j = 1:N
     if i == j
       Y = convert(Vector{Float64}, table_Hₐ[i + 1])
       spl = Dierckx.Spline1D(X, Y; w=ones(length(X)), k=splineDegree(interpolationType), bc="nearest", s=0.0)
       setindex!(data.Hₐ, R -> Dierckx.evaluate(spl, R), i, j)
       setindex!(data.itp_Hₐ, spl, i, j)
+      @info "Spline initialized; i=$i, j=$j. Asymptotics: table→ ($(X[end]), $(Y[end])), spline→ ($(X[end]), $(Dierckx.evaluate(spl, X[end])))"
     else
       setindex!(data.Hₐ, R -> 0, i, j)
     end
@@ -172,13 +191,15 @@ function buildHₐ!(table_Hₐ::DataFrame, data::Data, interpolationType::Interp
 end
 
 function build_d_dR!(table_∂_∂R::DataFrame, data::Data, N::Int, interpolationType::InterpolationType)
+  @info "Doing spline interpolation for <|d/dR|> couplings"
   X = convert(Vector{Float64}, table_∂_∂R[1])
   ΔR = X[2] - X[1]
   Nc = size(X, 1) - 1
-  data.∂_∂R = Array{Function, 2}(N, N)
-  data.itp_∂_∂R = Array{Dierckx.Spline1D, 2}(N, N)
+  data.∂_∂R = Array{Function, 2}(undef, N, N)
+  data.itp_∂_∂R = Array{Dierckx.Spline1D, 2}(undef, N, N)
   for i = 1:N, j = 1:N
     if i ≠ j
+      @info "Interpolation for <$i|d/dR|$j>"
       l = dataColumnOfSymetricMatrix(i, j, N)
       Y = convert(Vector{Float64}, table_∂_∂R[l + 1])
 
@@ -193,13 +214,13 @@ end
 
 function loadInitialConditions(file_name::AbstractString, N::Int)
   if !isfile(file_name)
-    return Nullable{Array{Float64, 2}}()
+    return Nullable{Matrix{Float64}}()
   end
   M = readdlm(file_name, ' ';
     header=false, skipstart=0, skipblanks=true,
     use_mmap=false, quotes=false, dims=(N, N),
     comments=true, comment_char='#')
-  return Nullable{Array{Float64, 2}}(M)
+  return Nullable{Matrix{Float64}}(M)
 end
 
 function splineDegree(interpolationType::InterpolationType)

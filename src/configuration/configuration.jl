@@ -1,21 +1,24 @@
 using JSON
 using DataFrames
 using DataStructures
+using Nullables
+using CSVFiles
 
-type InputPaths
+mutable struct InputPaths
   file_hamiltonian_adiabatic::AbstractString
   file_coupling_∂_∂R_adiabatic::AbstractString
   file_coupling_∂_∂R_adiabatic_model::Nullable{AbstractString}
   file_transformation_matrix_initial::Nullable{AbstractString}
+  file_transformation_matrix::Nullable{AbstractString}
 end
 
-type InputData
+mutable struct InputData
   hamiltonian_adiabatic::DataFrame
   coupling_∂_∂R_adiabatic::DataFrame
   coupling_∂_∂R_adiabatic_model::Nullable{DataFrame}
 end
 
-type OutputPaths
+mutable struct OutputPaths
   file_potentials_diabatic::AbstractString
   file_hamiltonian_diabatic::AbstractString
   file_coupling_∂_∂R_diabatic::AbstractString
@@ -39,7 +42,7 @@ const MAPPING_NonadiabaticAreaTypes = Dict(
   #"double-peak" => DOUBLE_PEAK
 )
 
-type UtilitySettings
+mutable struct UtilitySettings
   channel_ionic_number::Int
   channel_lowest_number::Int
 end
@@ -50,12 +53,12 @@ const MAPPING_InterpolationType = Dict(
   "spline-quadratic" => SPLINE_QUADRATIC::InterpolationType,
   "spline-cubic" => SPLINE_CUBIC::InterpolationType
 )
-type InterpolationSettings
+mutable struct InterpolationSettings
   hamiltonian::InterpolationType
   coupling_∂_∂R::InterpolationType
 end
 
-type AsymptoticSettings
+mutable struct AsymptoticSettings
   coordinate_start::Float64
   coordinate_step::Float64
   coordinate_step_error::Float64
@@ -65,8 +68,9 @@ type AsymptoticSettings
   ∂_∂R_zero_value_error::Float64
 end
 
-abstract NonadiabaticAreaSettings
-type SinglePeakNonadiabaticAreaSettings <: NonadiabaticAreaSettings
+abstract type NonadiabaticAreaSettings end
+
+mutable struct SinglePeakNonadiabaticAreaSettings <: NonadiabaticAreaSettings
   error_∂_∂R_peak::Float64
   vanishing_∂_∂R_value::Float64
   error_vanishing_∂_∂R_value::Float64
@@ -74,7 +78,7 @@ type SinglePeakNonadiabaticAreaSettings <: NonadiabaticAreaSettings
   error_potential_distance_coordinate::Float64
   error_potential_∂_∂R_coordinate::Float64
 end
-type NonadiabaticAreasConfiguration
+mutable struct NonadiabaticAreasConfiguration
   coordinate_start::Float64
   coordinate_step::Float64
   coordinate_piece::Float64
@@ -82,14 +86,24 @@ type NonadiabaticAreasConfiguration
   nonadiabatic_areas::Dict{NonadiabaticAreaTypes, NonadiabaticAreaSettings}
 end
 
-type DiabatizationSettings
+mutable struct SelectedDiabatizationArea
+    coordinate::Float64
+    states::Tuple{Int, Int}
+    extra_length::Tuple{Float64, Float64}
+    bunch_exclude::Bool
+end
+
+mutable struct DiabatizationSettings
+  areas::Vector{SelectedDiabatizationArea}
+  keep_initial_conditions::Bool
   coordinate_start::Float64
   coordinate_step::Tuple{Float64, Float64}
   coordinate_stop::Float64
+  area_closeness::Float64
   use_last_transformation_matrix_from::Nullable{Float64}
 end
 
-type CalculationSettings
+mutable struct CalculationSettings
   strategy::CalculationStrategy
   coordinate_start::Float64
   coordinate_step::Float64
@@ -102,7 +116,7 @@ type CalculationSettings
   interpolation::InterpolationSettings
 end
 
-type Configuration
+mutable struct Configuration
   input_paths::InputPaths
   input_data::InputData
   output_paths::OutputPaths
@@ -118,6 +132,9 @@ function loadConfiguration(filePath::AbstractString)
     Nullable{AbstractString}(),
     haskey(js["input-data"], "transformation-matrix-initial") ?
       js["input-data"]["transformation-matrix-initial"] :
+      Nullable{AbstractString}(),
+    haskey(js["input-data"], "transformation-matrix") ?
+      js["input-data"]["transformation-matrix"] :
       Nullable{AbstractString}())
 
   Hₐ_data = loadRawData(input_paths.file_hamiltonian_adiabatic)
@@ -140,10 +157,15 @@ function loadConfiguration(filePath::AbstractString)
 end
 
 function fixPotentialAsymptotics!(Hₐ_data::DataFrame, utilitySettings)
+  if utilitySettings.channel_lowest_number < 0
+    @info "Fixing channel asymptotics has been skept in the configuration loading stage."
+    return
+  end
   Nₚ = size(Hₐ_data, 1)
   Nᵩ = size(Hₐ_data, 2) - 1
   lowest_channel = utilitySettings.channel_lowest_number > 0 ? utilitySettings.channel_lowest_number : 1
   Uₗ_∞ = Hₐ_data[Nₚ, lowest_channel + 1]
+  @info "Fixing chennel asymptotics with V₀ᴬ(∞)=$(Uₗ_∞)."
   for line = 1:Nₚ, channel = 1:Nᵩ
     Hₐ_data[line, channel + 1] = Hₐ_data[line, channel + 1] - Uₗ_∞
   end
@@ -151,7 +173,8 @@ end
 
 function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputData)
   jss = js["settings"]
-  strategy_name = CalculationStrategy(deriveStrategy(jss["strategy"]))
+  strategy_name = deriveStrategy(jss["strategy"])
+  @info "Chosen calculation strategy: $strategy_name"
   if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name
     if haskey(js["input-data"], "coupling_∂_∂R_adiabatic_model")
       input_paths.file_coupling_∂_∂R_adiabatic_model = js["input-data"]["coupling_∂_∂R_adiabatic_model"]
@@ -159,7 +182,7 @@ function loadCalculationSettings(js, input_paths::InputPaths, input_data::InputD
       throw(DomainError("The configuration setting 'coupling_∂_∂R_adiabatic_model' is obligatory for the strategy $strategy_name"))
     end
   end
-  if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_names
+  if LANDAU_ZENER_WITH_EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name || EXTERNAL_MODEL_DATA::CalculationStrategy == strategy_name
     input_data.coupling_∂_∂R_adiabatic_model = loadRawData(get(input_paths.file_coupling_∂_∂R_adiabatic_model))
   end
 
@@ -204,10 +227,26 @@ function loadDiabatizationSettings(js)
   @assert step_min <= step_max
   use_prev_expression = haskey(js, "use-last-transformation-matrix-from") ?
     Nullable{Float64}(js["use-last-transformation-matrix-from"]) : Nullable{Float64}()
+
+  js_selected_areas = js["selected-areas"]
+  selected_areas = Vector{SelectedDiabatizationArea}(undef, 0)
+  for area in js_selected_areas
+      state1 = area["states"][1]
+      state2 = area["states"][2]
+      extra_length = Tuple{Float64, Float64}(area["extra-length"])
+      diab_area = SelectedDiabatizationArea(
+        area["coordinate"], (state1, state2), extra_length, area["bunch-exclude"])
+      push!(selected_areas, diab_area)
+  end
+  sort!(selected_areas, by = diab_area -> diab_area.coordinate)
+
   return DiabatizationSettings(
+    selected_areas,
+    js["keep-initial-conditions"],
     js["coordinate-start"],
     (step_min, step_max),
     js["coordinate-stop"],
+    js["area-closeness"],
     use_prev_expression
   )
 end
@@ -338,10 +377,6 @@ function deriveStrategy(strategyName::AbstractString)
 end
 
 function loadRawData(filePath::AbstractString)
-  return DataFrames.readtable(
-    filePath,
-    header = true, separator = ' ',
-    allowcomments = true, commentmark = '#',
-    skipblanks = true, encoding = :utf8, normalizenames = false
-  )
+  return DataFrame(load(filePath;
+    spacedelim=true, header_exists=true))
 end
