@@ -14,6 +14,7 @@ const Sts = Statistics
 function diabatize(
     Hₐ::Array{Function, 2},
     ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, ∂_∂R_arg::Vector{Float64},
+    oam::Matrix{Vector{OptimizableArea}},
     solutions::Vector{LocalSolution}, C::DiabatizationSettings, LZ::Array{Array{LandauZenerArea, 1}, 2})
     @info "**************************************************"
     @info "Diabatizing..."
@@ -37,7 +38,7 @@ function diabatize(
         push!(Sᶠˢᵖ, Sᶠⁱ[2])
     end
     @info "Number of partial transformation matrices length - $(length(Sᶠ))"
-    Rᶜ, Sᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, ∂_∂Rᵐ = diabatizeWithPartialMatrices(Hₐ, ∂_∂R, ∂_∂Rᵐᵒᵈᵉˡ, ∂_∂R_arg, Rᶜ, Sᶠ, Sᶠˢᵖ, solutions, LZ)
+    Rᶜ, Sᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, ∂_∂Rᵐ = diabatizeWithPartialMatrices(Hₐ, ∂_∂R, ∂_∂Rᵐᵒᵈᵉˡ, ∂_∂R_arg, oam, Rᶜ, Sᶠ, Sᶠˢᵖ, solutions, LZ)
     @info "**************************************************"
     return Rᶜ, Sᵛᵉᶜ, Hᵈ, ∂_∂Rᵈ, ∂_∂Rᵐ
 end
@@ -45,6 +46,7 @@ end
 function diabatizeWithPartialMatrices(
     Hₐ::Array{Function, 2},
     ∂_∂R::Array{Function, 2}, ∂_∂Rᵐᵒᵈᵉˡ::Array{Function, 2}, ∂_∂R_arg::Vector{Float64},
+    oam::Matrix{Vector{OptimizableArea}},
     Rᶜ::Vector{Float64}, Sᶠ::Vector{Array{Function, 2}}, Sᶠˢᵖ::Vector{Array{Dierckx.Spline1D, 2}},
     Sl::Vector{LocalSolution}, LZ::Array{Array{LandauZenerArea, 1}, 2})
     Nˡ = length(Sᶠ)
@@ -71,8 +73,25 @@ function diabatizeWithPartialMatrices(
     ∂_∂Rᵐ = Vector{Matrix{Float64}}(undef, 0)
     Sᵛᵉᶜ = Vector{Matrix{Float64}}(undef, 0)
 
+    @info "Solutions taken into account:\n$Sl"
     interval_states = Dict{Vector{Int}, Tuple{Float64, Float64}}()
-    foreach(s -> begin interval_states[s.states] = s.interval end, Sl)
+    for solution ∈ Sl
+        if haskey(interval_states, solution.states)
+            interval = interval_states[solution.states]
+            additional_interval = solution.interval
+            left_border = interval[1]
+            if additional_interval[1] < left_border
+                left_border = additional_interval[1]
+            end
+            right_border = interval[2]
+            if additional_interval[2] > right_border
+                right_border = additional_interval[2]
+            end
+            interval_states[solution.states] = (left_border, right_border)
+        else
+            interval_states[solution.states] = solution.interval
+        end
+    end
     @info "Interval states: $interval_states"
     @info "Making new potentials..."
     for R ∈ Rᶜ
@@ -93,24 +112,44 @@ function diabatizeWithPartialMatrices(
     for R ∈ ∂_∂R_arg
         S = matf2mat(R, Sᵛᶠ)
         ∇S = Dierckx.derivative.(Sᵛᶠˢᵖ, R; nu=1)
-        S⁻¹ = S'
+        #∇S = matf2derivative(Sᵛᶠ, R, 1e-4)
+        ∇S = round_to_integers(∇S; ϵ = 1e-4)
+        S⁻¹ = 1*S'
 
+        #∂_∂Rᴬ = matf2mat(R, ∂_∂R); ∂_∂Rᴹ = matf2mat(R - 1.05e-6, ∂_∂Rᵐᵒᵈᵉˡ)
         ∂_∂Rᴬ = matf2mat(R, ∂_∂R); ∂_∂Rᴹ = matf2mat(R, ∂_∂Rᵐᵒᵈᵉˡ)
+        #∂_∂Rᴬ = round_to_integers(∂_∂Rᴬ; ϵ = 1e-2)
+        #∂_∂Rᴹ = round_to_integers(∂_∂Rᴹ; ϵ = 1e-2)
         ∂_∂Rᴰ = S⁻¹ * ∂_∂Rᴬ * S + S⁻¹ * ∇S
+        #∂_∂Rᴰ = 1.0*∂_∂Rᴬ  .- 1.0*∂_∂Rᴹ
 
-        state_list = map(is -> is[1], filter(is -> is[2][1] ≤ R ≤ is[2][2], collect(interval_states)))
+        state_list = map(is -> is[1], filter(is -> is.second[1] ≤ R ≤ is.second[2], collect(interval_states)))
         for states ∈ state_list
             @assert(issorted(states), "The states $states are not sorted.")
             s¹ = states[1]; sᵉ = states[end]
-            #∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = S⁻¹[s¹:sᵉ, s¹:sᵉ] * (∂_∂Rᴬ[s¹:sᵉ, s¹:sᵉ] - ∂_∂Rᴹ[s¹:sᵉ, s¹:sᵉ]) * S[s¹:sᵉ, s¹:sᵉ]
             ∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = zeros(sᵉ-s¹+1, sᵉ-s¹+1)
-            ∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = ∂_∂Rᴬ[s¹:sᵉ, s¹:sᵉ] - ∂_∂Rᴹ[s¹:sᵉ, s¹:sᵉ]
+            new_ddr = ∂_∂Rᴬ[s¹:sᵉ, s¹:sᵉ] .- ∂_∂Rᴹ[s¹:sᵉ, s¹:sᵉ]
+            ∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = new_ddr
         end
 
         @assert typeof(∂_∂Rᴰ) == Matrix{Float64}
         push!(∂_∂Rᵈ, ∂_∂Rᴰ)
         push!(∂_∂Rᵐ, ∂_∂Rᴹ)
     end
+
+    # for k = 1:length(∂_∂R_arg)
+    #     R = ∂_∂R_arg[k]
+    #     ∂_∂Rᴬ = matf2mat(R, ∂_∂R); ∂_∂Rᴹ = matf2mat(R, ∂_∂Rᵐᵒᵈᵉˡ)
+    #     ∂_∂Rᴰ = ∂_∂Rᵈ[k]
+    #
+    #     state_list = map(is -> is[1], filter(is -> is.second[1] ≤ R ≤ is.second[2], collect(interval_states)))
+    #     for states ∈ state_list
+    #         @assert(issorted(states), "The states $states are not sorted.")
+    #         s¹ = states[1]; sᵉ = states[end]
+    #         ∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = zeros(sᵉ-s¹+1, sᵉ-s¹+1)
+    #         ∂_∂Rᴰ[s¹:sᵉ, s¹:sᵉ] = ∂_∂Rᴬ[s¹:sᵉ, s¹:sᵉ] .- ∂_∂Rᴹ[s¹:sᵉ, s¹:sᵉ]
+    #     end
+    # end
 
     # sols = Dict{Vector{Int}, LocalSolution}()
     # foreach(s -> begin sols[s.states] = s end, Sl)
@@ -121,6 +160,10 @@ function diabatizeWithPartialMatrices(
     @info "=================================Smoothing ⟨i|∂/∂R|j⟩====================================="
     for i = 1:N_lz, j = 1:N_lz
         if i >= j
+            continue
+        end
+        if isassigned(oam, i, j) && !isempty(oam[i, j])
+            @warn "******* No smoothing of areas for ⟨$(i)|∂/∂R|$(j)⟩ *******"
             continue
         end
         if !isempty(LZ[i, j]) && i < j

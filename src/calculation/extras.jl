@@ -155,7 +155,8 @@ function boundaryFunctions(
         αˢʰᵃʳᵖ = 10.0
         σf = sign(Sᴸᵈ[i, j](Rᴸ[1]) - Sᴸᵛ[i, j](Rᴸ[end]))
         R₀ = inv_ϕ₀ * Rᴸ[1] + ϕ₀ * Rᴸ[end]
-        α = abs(Rᴸ[end] - Rᴸ[1]) / αˢʰᵃʳᵖ
+        #α = abs(Rᴸ[end] - Rᴸ[1]) / αˢʰᵃʳᵖ
+        α = abs(Rᴸ[end] - Rᴸ[1]) / 2
         # ----
         Sᴸ[i, j] = sigmoid_of_name(Sᴸᵈ[i, j], Sᴸᵛ[i, j], R₀, α, "Sᴸ[$i, $j]")
     end
@@ -165,7 +166,8 @@ function boundaryFunctions(
         αˢʰᵃʳᵖ = 10.0
         σf = sign(Sᴿᵛ[i, j](Rᴿ[end]) - Sᴿᵈ[i, j](Rᴿ[1]))
         R₀ = ϕ₀ * Rᴿ[1] + inv_ϕ₀ * Rᴿ[end]
-        α = abs(Rᴿ[end] - Rᴿ[1]) / αˢʰᵃʳᵖ
+        #α = abs(Rᴿ[end] - Rᴿ[1]) / αˢʰᵃʳᵖ
+        α = abs(Rᴿ[end] - Rᴿ[1]) / 2
         # ----
         Sᴿ[i, j] = sigmoid_of_name(Sᴿᵛ[i, j], Sᴿᵈ[i, j], R₀, α, "Sᴿ[$i, $j]")
     end

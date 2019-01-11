@@ -7,10 +7,10 @@ using CSVFiles
 import Dierckx
 
 mutable struct Data
-  Hₐ::Array{Function, 2}
-  ∂_∂R::Array{Function, 2}
-  itp_Hₐ::Array{Dierckx.Spline1D, 2}
-  itp_∂_∂R::Array{Dierckx.Spline1D, 2}
+  Hₐ::Matrix{Function}
+  ∂_∂R::Matrix{Function}
+  itp_Hₐ::Matrix{Dierckx.Spline1D}
+  itp_∂_∂R::Matrix{Dierckx.Spline1D}
   function Data() new() end
 end
 
@@ -22,16 +22,16 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
     ∂_∂Rᴰᵈᵃᵗᵃ::Matrix{Float64},
     ∂_∂Rᵐᵈᵃᵗᵃ::Matrix{Float64},
     ∂_∂R_arg::Vector{Float64},
-    ∂²_∂R²ᴰᵈᵃᵗᵃ::Matrix{Float64},
-    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Matrix{Float64},
+#    ∂²_∂R²ᴰᵈᵃᵗᵃ::Matrix{Float64},
+#    ∂²_∂R²ᴰᵈᵃᵗᵃ_diag::Matrix{Float64},
     Sl::Vector{LocalSolution},
     out::OutputPaths)
 
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Uᴰᵈᵃᵗᵃ, 1)
   @assert length(Rᵖᵒⁱⁿᵗˢ) == size(Hᴰᵈᵃᵗᵃ, 1)
   @assert length(∂_∂R_arg) == size(∂_∂Rᴰᵈᵃᵗᵃ, 1)
-  @assert length(∂_∂R_arg) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 1)
-  @assert length(∂_∂R_arg) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 1)
+  #@assert length(∂_∂R_arg) == size(∂²_∂R²ᴰᵈᵃᵗᵃ, 1)
+  #@assert length(∂_∂R_arg) == size(∂²_∂R²ᴰᵈᵃᵗᵃ_diag, 1)
 
   @assert size(Hᴰᵈᵃᵗᵃ, 2) == size(Uᴰᵈᵃᵗᵃ, 2)*(size(Uᴰᵈᵃᵗᵃ, 2) - 1)/2
   #@assert size(Hᴰᵈᵃᵗᵃ, 2) == size(∂_∂Rᴰᵈᵃᵗᵃ, 2)
@@ -51,9 +51,9 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   ∂_∂R = makeMatrixElementTable(∂_∂R_arg, ∂_∂Rᴰᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
   ∂_∂Rᵐ = makeMatrixElementTable(∂_∂R_arg, ∂_∂Rᵐᵈᵃᵗᵃ, :antisymmetric, "d/dR", N)
   # -----------
-  ∂²_∂R² = makeMatrixElementTable(∂_∂R_arg, ∂²_∂R²ᴰᵈᵃᵗᵃ, :symmetric, "d2/dR2", N)
+#  ∂²_∂R² = makeMatrixElementTable(∂_∂R_arg, ∂²_∂R²ᴰᵈᵃᵗᵃ, :symmetric, "d2/dR2", N)
   # -----------
-  ∂²_∂R²ᵈⁱᵃᵍ = makeMatrixElementTable(∂_∂R_arg, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, :diagonal, "d2/dR2", N)
+#  ∂²_∂R²ᵈⁱᵃᵍ = makeMatrixElementTable(∂_∂R_arg, ∂²_∂R²ᴰᵈᵃᵗᵃ_diag, :diagonal, "d2/dR2", N)
   # -----------
 
   # -----------
@@ -68,10 +68,10 @@ function saveData(Rᵖᵒⁱⁿᵗˢ::Vector{Float64},
   @info "Saving the transformation matrix table to '$(out.file_coupling_∂_∂R_diabatic)'"
   saveMatrixElementTable(∂_∂R, out.file_coupling_∂_∂R_diabatic)
   saveMatrixElementTable(∂_∂Rᵐ, "$(out.file_coupling_∂_∂R_diabatic)-model.csv")
-  @info "Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic)'"
-  saveMatrixElementTable(∂²_∂R², out.file_coupling_∂²_∂R²_diabatic)
-  @info "Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic_diag)'"
-  saveMatrixElementTable(∂²_∂R²ᵈⁱᵃᵍ, out.file_coupling_∂²_∂R²_diabatic_diag)
+  # @info "Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic)'"
+  # saveMatrixElementTable(∂²_∂R², out.file_coupling_∂²_∂R²_diabatic)
+  # @info "Saving the transformation matrix table to '$(out.file_coupling_∂²_∂R²_diabatic_diag)'"
+  # saveMatrixElementTable(∂²_∂R²ᵈⁱᵃᵍ, out.file_coupling_∂²_∂R²_diabatic_diag)
   @info "Saving the partial transformation matrices..."
   for sol ∈ Sl
       sol_file_name = "$(out.file_transformation_matrix)-$(join(sol.states, "_")).csv"

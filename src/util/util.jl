@@ -14,6 +14,14 @@ const golden = Base.MathConstants.golden
 const inv_ϕ₀ = (1 - 1 / golden)
 const ϕ₀ = 1/golden
 
+flatten(arr::Array) = mapreduce(x -> isa(x, Array) ? flatten(x) : x, append!, arr,init=[])
+flatten(arr::Tuple) = mapreduce(x -> isa(x, Tuple) ? flatten(x) : x, append!, arr,init=[])
+flatten(arr::Base.KeySet) = mapreduce(x -> isa(x, Base.KeySet) ? flatten(x) : x, append!, arr,init=[])
+
+splitparts(x,n) = collect(Iterators.partition(x, n))
+key(p::Pair) = p.first
+value(p::Pair) = p.second
+
 function clearGrid(R::Vector{Float64}, ϵᴿ)
     Rᵛ = Vector{Float64}(undef, 0)
     Rˡ = R[1]
@@ -29,24 +37,13 @@ function clearGrid(R::Vector{Float64}, ϵᴿ)
     return Rᵛ
 end
 
-function sigmoid_of_name(f1::Function, f2::Function, x₀, α, name::AbstractString)
-  return x -> begin
-    sf = (1 - sigmoid(x, x₀, α))*f1(x) + sigmoid(x, x₀, α)*f2(x)
-    if sf === NaN || sf === NaN64 || sf === NaN32 || sf === NaN16
-      @error "SIGMOID NaN: x=$x, x₀=$x₀, α=$α, f1(x)=$(f1(x)), f2(x)=$(f2(x)), σ(x)=$(sigmoid(x, x₀, α)), name=$name"
-    end
-    return sf
-  end
-end
-const sigmoid = (x, x₀, α) -> 1/(1+exp(-(x - x₀)/α))
-
 function mat2string(M::Matrix{Float64})
     io = IOBuffer()
     return String(take!(io))
     Base.print_array(io, M)
 end
 
-function mat2string(M::Array{Function, 2})
+function mat2string(M::Matrix{Function})
     io = IOBuffer()
     Base.print_array(io, M)
     return String(take!(io))
@@ -127,6 +124,15 @@ function ssecond_derivative(f::Function, x::Float64)
     err("Unable to calculate df/dx on function object $f at the point $x")
     throw(e)
   end
+end
+
+function matf2derivative(Mf::Matrix{Function}, x::Float64, δx::Float64)
+  Mˣ⁻²ᵟˣ = matf2mat(x - 2δx, Mf)
+  Mˣ⁻ᵟˣ = matf2mat(x - δx, Mf)
+  Mˣ⁺ᵟˣ = matf2mat(x + δx, Mf)
+  Mˣ⁺²ᵟˣ = matf2mat(x + 2δx, Mf)
+  dM_dx = (Mˣ⁻²ᵟˣ - 8Mˣ⁻ᵟˣ + 8Mˣ⁺ᵟˣ - Mˣ⁺²ᵟˣ) / (12δx)
+  return dM_dx
 end
 
 """
@@ -230,6 +236,29 @@ function matl2matupper(M::Matrix{Float64})
   return ML
 end
 
+function matl2matupper_data(X::Vector{Float64}, Ml::Vector{Matrix{Float64}})
+  L = length(X)
+  @assert size(Ml, 1) == L
+  N = size(Ml[1], 1)
+  Nl = dataSizeOfSymetricMatrix(N)
+  M_data = zeros(L, Nl + 1)
+  for l = 1:L
+    x = X[l]
+    M = Ml[l]
+
+    row = Vector{Float64}(undef, Nl + 1)
+    row[1] = x
+    for i = 1:N, j = 1:N
+      if i < j
+        k = dataColumnOfSymetricMatrix(i, j, N)
+        row[k + 1] = M[i, j]
+      end
+    end
+    M_data[l, :] = row
+  end
+  return M_data
+end
+
 function matl2matlupperx(Mˡ::Vector{Matrix{Float64}})
   N = size(Mˡ[1], 1)
   L = size(Mˡ, 1); Nᴸ = dataSizeOfSymetricMatrix(N)
@@ -306,13 +335,28 @@ function matdata2matl(data::DataFrame)
   return X, Y
 end
 
-function matf2mat(x::Float64, Mᶠ::Array{Function, 2})
+function matf2mat(x::Float64, Mᶠ::Matrix{Function})
   N₁ = size(Mᶠ, 1); N₂ = size(Mᶠ, 2)
   M = Matrix{Float64}(undef, N₁, N₂)
   for i = 1:N₁, j = 1:N₂
     M[i, j] = Mᶠ[i, j](x)
   end
   return M
+end
+
+function matf2matl(X::Vector{Float64}, Mᶠ::Matrix{Function})
+  L = length(X)
+  N₁ = size(Mᶠ, 1); N₂ = size(Mᶠ, 2)
+  Ml = Vector{Matrix{Float64}}(undef, 0)
+  for x ∈ X
+    M = Matrix{Float64}(undef, N₁, N₂)
+    for i = 1:N₁, j = 1:N₂
+      M[i, j] = Mᶠ[i, j](x)
+    end
+    push!(Ml, M)
+  end
+  @assert length(Ml) == L
+  return Ml
 end
 
 function matl2matfsl(X::Vector{Float64}, Mˡ::Vector{Matrix{Float64}}; behaviour::AbstractString="extrapolate")
@@ -375,6 +419,21 @@ function matl2mdata(Mˡ::Vector{Matrix{Float64}})
     end
   end
   return Mᵈᵃᵗᵃ
+end
+
+function round_to_integers(M::Matrix{Float64}; ϵ = 1e-4)
+  Mr = Matrix{Float64}(undef, size(M, 1), size(M, 2))
+  for i = 1:size(M, 1), j = 1:size(M, 2)
+    v = M[i, j]; abs_v = abs(v); sign_v = sign(v)
+    v_low = floor(abs_v); v_high = ceil(abs_v)
+    Δv_low = abs_v - v_low; Δv_high = v_high - abs_v
+    @assert Δv_low ≥ 0
+    @assert Δv_high ≥ 0
+    new_v = ifelse(Δv_low ≤ ϵ, sign_v * v_low,
+            ifelse(Δv_high ≤ ϵ, sign_v * v_high, v))
+    Mr[i, j] = new_v
+  end
+  return Mr
 end
 
 """

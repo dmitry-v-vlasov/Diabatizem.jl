@@ -96,6 +96,9 @@ mutable struct LandauZenerArea <: NonadiabaticArea
     return this
   end
 end
+function -(A::LandauZenerArea)
+  return LandauZenerArea(reverse(A.states), A.R₀, -(A.τ₀), A.Rₐ, A.Rᵦ)
+end
 function show(io::IO, mime::AbstractString, A::LandauZenerArea)
   show(io, A)
 end

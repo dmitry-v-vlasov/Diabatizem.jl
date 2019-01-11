@@ -331,11 +331,11 @@ function detectLandauZenerAreas(M_Hₐ::Array{Function, 2}, areas::Array{Vector{
   return M_Αˡᶻ
 end
 
-function filterSelectedLandauZenerAreas(lz_areas::Array{Vector{SinglePeakNonadiabaticArea}, 2}, diabatization_settings::DiabatizationSettings)
+function filterSelectedLandauZenerAreas(lz_areas::Matrix{Vector{SinglePeakNonadiabaticArea}}, diabatization_settings::DiabatizationSettings)
     @info "==== Landau-Zener Areas Filtering ====="
     N = size(lz_areas, 1)
     selected_areas = diabatization_settings.areas
-    lz_areas_filtered = Array{Vector{SinglePeakNonadiabaticArea}, 2}(undef, N, N)
+    lz_areas_filtered = Matrix{Vector{SinglePeakNonadiabaticArea}}(undef, N, N)
     fill!(lz_areas_filtered, Vector{SinglePeakNonadiabaticArea}(undef, 0))
     ϵᴿ = 0.2
     @info "Selected areas to filter:\n$(selected_areas)"
