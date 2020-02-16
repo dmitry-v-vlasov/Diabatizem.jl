@@ -7,13 +7,13 @@
   },
   "transformation-matrix": "transformation-matrix.csv",
   "output-data": {
-    "potentials-diabatic": "../../output/output-potentials-diabatic.csv",
-    "hamiltonian-diabatic": "../../output/output-hamiltonian-diabatic.csv",
-    "coupling-∂_∂R-diabatic": "../../output/output-ddr-diabatic.csv",
-    "coupling-∂²_∂R²-diabatic": "../../output/output-d2dr2-diabatic.csv",
-    "coupling-∂²_∂R²-diabatic-diagonal": "../../output/output-d2dr2-diabatic-diagonal.csv",
-    "transformation-matrix": "../../output/output-transformation-matrix.csv",
-    "transformation-matrix-general": "../../output/output-transformation-matrix-general.csv"
+    "potentials-diabatic": "../../output2/output-potentials-diabatic.csv",
+    "hamiltonian-diabatic": "../../output2/output-hamiltonian-diabatic.csv",
+    "coupling-∂_∂R-diabatic": "../../output2/output-ddr-diabatic.csv",
+    "coupling-∂²_∂R²-diabatic": "../../output2/output-d2dr2-diabatic.csv",
+    "coupling-∂²_∂R²-diabatic-diagonal": "../../output2/output-d2dr2-diabatic-diagonal.csv",
+    "transformation-matrix": "../../output2/output-transformation-matrix.csv",
+    "transformation-matrix-general": "../../output2/output-transformation-matrix-general.csv"
   },
   "settings": {
     "strategy": "Landau-Zener",
@@ -51,13 +51,13 @@
         {
           "coordinate": 29.63403831,
           "states": [8, 9],
-          "extra-length": [0.5, 0.5],
-          "bunch-exclude": true
+          "extra-length": [15.0, 0.5],
+          "bunch-exclude": false
         },
         {
           "coordinate": 9.7788768,
           "states": [8, 9],
-          "extra-length": [2.0, 15.0],
+          "extra-length": [4.0, 15.0],
           "bunch-exclude": false
         },
         {

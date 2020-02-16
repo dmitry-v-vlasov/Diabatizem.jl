@@ -94,17 +94,17 @@ function make_piecewise_sigmoid_function(
 
     δxₖ_left = ifelse(xₖ_a_left == -Inf,
       10 * 𝐆old * Δxₛ,
-      ifelse((𝐆old - 1) * Δxₛ < Δxₖ_left, (𝐆old - 1) * Δxₛ/π, (2 - 𝐆old) * Δxₖ_left / 2))
+      ifelse((𝐆old - 1) * Δxₛ < Δxₖ_left, (𝐆old - 1) * Δxₛ, (2 - 𝐆old) * Δxₖ_left))
 
     δxₖ_right = ifelse(xₖ_b_right == Inf,
       10 * 𝐆old * Δxₛ,
-      ifelse((𝐆old - 1) * Δxₛ < Δxₖ_right, (𝐆old - 1) * Δxₛ/π, (2 - 𝐆old) * Δxₖ_right / 2))
+      ifelse((𝐆old - 1) * Δxₛ < Δxₖ_right, (𝐆old - 1) * Δxₛ, (2 - 𝐆old) * Δxₖ_right))
     #@assert(δxₖ_left ≥ (𝐆old - 1) * Δxₛ / 2, "δxₖ_left ≥ (𝐆old - 1)Δxₛ/2: δxₖ_left = $(δxₖ_left), (𝐆old - 1)Δxₛ/2 = $((𝐆old - 1)*Δxₛ/2)")
     #@assert(δxₖ_right ≥ (𝐆old - 1) * Δxₛ / 2, "δxₖ_right ≥ (𝐆old - 1)Δxₛ/2: δxₖ_right = $(δxₖ_right),  (𝐆old - 1)Δxₛ/2 = $((𝐆old - 1)*Δxₛ/2)")
 
     α = 0.2 * (δxₖ_left + δxₖ_right)
-    δxₖ_left_new = keep_leftₖ ? δxₖ_left / 100.0 : δxₖ_left
-    δxₖ_right_new = keep_rightₖ ? δxₖ_right / 100.0 : δxₖ_right
+    δxₖ_left_new = keep_leftₖ ? δxₖ_left / 10.0 : δxₖ_left
+    δxₖ_right_new = keep_rightₖ ? δxₖ_right / 10.0 : δxₖ_right
     if δxₖ_left_new < δxₖ_left
       x₀ₖ = x₀ₖ + δxₖ_left - δxₖ_left_new
     end

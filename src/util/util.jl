@@ -39,8 +39,8 @@ end
 
 function mat2string(M::Matrix{Float64})
     io = IOBuffer()
-    return String(take!(io))
     Base.print_array(io, M)
+    return String(take!(io))
 end
 
 function mat2string(M::Matrix{Function})
